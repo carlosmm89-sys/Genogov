@@ -1,0 +1,7 @@
+{
+  "name": "QR Laboral",
+  "description": "Sistema profesional de control horario para cumplimiento de normativa española. Gestión de entradas, salidas, empleados y reportes con IA.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
