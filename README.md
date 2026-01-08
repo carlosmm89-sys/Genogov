@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# QR Laboral - Control de Presencia
 
-# Run and deploy your AI Studio app
+Sistema SaaS de control de presencia y fichaje laboral mediante códigos QR.
 
-This contains everything you need to run your app locally.
+## Tecnologías
 
-View your app in AI Studio: https://ai.studio/apps/drive/1K7mKUaT8H-DCDgJq-bvni8WEWbNziDe0
+- **Frontend**: React + Vite + TypeScript
+- **Estilos**: Tailwind CSS
+- **Base de Datos**: Supabase (PostgreSQL)
+- **Autenticación**: Supabase Auth
+- **Despliegue**: Vercel
 
-## Run Locally
+## Estado del Proyecto
 
-**Prerequisites:**  Node.js
+- [x] Configuración de Base de Datos
+- [x] Integración de Autenticación
+- [x] Portal de Empleado (QR)
+- [x] Dashboard de Admin
+- [/] Despliegue en Producción (Vercel Conectado)
 
+## Despliegue
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Este proyecto está configurado para despliegue continuo en Vercel.
