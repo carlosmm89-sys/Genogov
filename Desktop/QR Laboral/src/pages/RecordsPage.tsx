@@ -66,7 +66,7 @@ export const RecordsPage: React.FC = () => {
         // Filter by Dept (needs joining with users)
         if (deptFilter !== 'all') {
             res = res.filter(log => {
-                const user = users.find(u => u.id === log.userId);
+                const user = users.find(u => u.id === log.user_id);
                 return user?.department === deptFilter;
             });
         }
@@ -88,8 +88,8 @@ export const RecordsPage: React.FC = () => {
     const handleExportCSV = () => {
         const headers = ['ID,User,Date,Start,End,TotalHours,Status'];
         const rows = filteredLogs.map(l => {
-            const u = getUser(l.userId);
-            return `${l.id},${u?.name},${l.date},${l.startTime},${l.endTime || ''},${l.totalHours},${l.status}`;
+            const u = getUser(l.user_id);
+            return `${l.id},${u?.full_name},${l.date},${l.start_time},${l.end_time || ''},${l.total_hours},${l.status}`;
         });
 
         const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join('\n');
@@ -102,11 +102,11 @@ export const RecordsPage: React.FC = () => {
         document.body.removeChild(link);
     };
 
-    const handleOpenPrint = (userId: string) => {
+    const handleOpenPrint = (user_id: string) => {
         // Determine which logs to print based on context
         // Usually prints monthly report for a specific user
-        const userSpecificLogs = filteredLogs.filter(l => l.userId === userId);
-        setPrintUser(getUser(userId));
+        const userSpecificLogs = filteredLogs.filter(l => l.user_id === user_id);
+        setPrintUser(getUser(user_id));
         setPrintLogs(userSpecificLogs);
         setIsPrintOpen(true);
     };
@@ -191,16 +191,16 @@ export const RecordsPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {filteredLogs.map(log => {
-                                const user = getUser(log.userId);
+                                const user = getUser(log.user_id);
                                 return (
                                     <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                                                    {user?.name.charAt(0)}
+                                                    {user?.full_name.charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-gray-900">{user?.name}</p>
+                                                    <p className="text-sm font-bold text-gray-900">{user?.full_name}</p>
                                                     <p className="text-xs text-gray-500">{user?.department}</p>
                                                 </div>
                                             </div>
@@ -209,24 +209,24 @@ export const RecordsPage: React.FC = () => {
                                             {log.date}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
-                                            {formatTime(log.startTime)}
+                                            {formatTime(log.start_time)}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
-                                            {formatTime(log.endTime)}
+                                            {formatTime(log.end_time)}
                                         </td>
                                         <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                                            {log.totalHours.toFixed(2)}
+                                            {log.total_hours?.toFixed(2) || '0.00'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${log.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                log.status === 'active' ? 'bg-indigo-100 text-indigo-800' : 'bg-yellow-100 text-yellow-800'
+                                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${log.status === 'FINISHED' ? 'bg-green-100 text-green-800' :
+                                                log.status === 'WORKING' ? 'bg-indigo-100 text-indigo-800' : 'bg-yellow-100 text-yellow-800'
                                                 }`}>
-                                                {log.status === 'completed' ? 'Completado' : log.status === 'active' ? 'En Curso' : 'Pausado'}
+                                                {log.status === 'FINISHED' ? 'Completado' : log.status === 'WORKING' ? 'En Curso' : 'Pausado'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <button
-                                                onClick={() => handleOpenPrint(log.userId)}
+                                                onClick={() => handleOpenPrint(log.user_id)}
                                                 className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 bg-indigo-50 px-3 py-1.5 rounded-md transition-all"
                                             >
                                                 <Printer className="w-3 h-3" /> Imprimir

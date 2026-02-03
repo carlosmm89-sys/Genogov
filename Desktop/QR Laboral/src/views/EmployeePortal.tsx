@@ -91,7 +91,7 @@ const EmployeePortal: React.FC<EmployeePortalProps> = ({ user, onLogout }) => {
             user_id: user.id,
             company_id: user.company_id,
             date: now.toISOString().split('T')[0],
-            start_time: now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+            start_time: now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             status: 'WORKING',
             total_hours: 0,
             breaks: [],
@@ -167,7 +167,7 @@ const EmployeePortal: React.FC<EmployeePortalProps> = ({ user, onLogout }) => {
 
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-            <Header user={user} onLogout={onLogout} />
+            <Header user={user} onLogout={onLogout} companyLogo={company?.logo_url} />
 
             <main className="flex-1 p-4 md:p-8 max-w-3xl mx-auto w-full space-y-6 animate-in fade-in duration-700">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

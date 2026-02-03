@@ -14,6 +14,8 @@ export interface User {
     email?: string; // Should be mandatory for auth sync really
     avatar_url?: string;
     is_external?: boolean; // New field for external employees
+    dni?: string;
+    phone?: string;
 }
 
 export interface WorkSite {

@@ -26,8 +26,10 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // Remove password from submission entirely to force auto-generation
+        const { password, ...submissionData } = formData;
         onSave({
-            ...formData,
+            ...submissionData,
             // Auto-generate username if empty from email
             username: formData.username || formData.email.split('@')[0]
         });
@@ -83,27 +85,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                             />
                         </div>
 
-                        {/* Password with Eye */}
-                        <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><Lock size={12} /> Contraseña Inicial</label>
-                            <div className="relative">
-                                <input
-                                    required
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="••••••••"
-                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 font-bold text-slate-700 focus:outline-none focus:border-indigo-500 transition-colors pr-12"
-                                    value={formData.password}
-                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                        </div>
+                        {/* Password removed - Auto-generated logic applied */}
 
                         {/* Department */}
                         <div className="space-y-2">

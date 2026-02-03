@@ -33,7 +33,7 @@ export const UsersPage: React.FC = () => {
     }, []);
 
     const handleOpenPrint = (user: User) => {
-        const userLogs = logs.filter(l => l.userId === user.id);
+        const userLogs = logs.filter(l => l.user_id === user.id);
         setSelectedUser(user);
         setPrintLogs(userLogs);
         setIsPrintOpen(true);
@@ -88,10 +88,10 @@ export const UsersPage: React.FC = () => {
                             </button>
 
                             <div className="w-20 h-20 rounded-full bg-gray-100 mb-4 overflow-hidden border-4 border-white shadow-sm">
-                                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900">{user.name}</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{user.full_name}</h3>
                             <p className="text-sm text-gray-500 mb-1">{user.department}</p>
                             <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full font-medium mb-6">
                                 {user.role}
@@ -120,7 +120,7 @@ export const UsersPage: React.FC = () => {
                 onClose={() => setIsSecurityOpen(false)}
                 onConfirm={handleConfirmDelete}
                 title="¿Eliminar Empleado?"
-                description={`Estás a punto de eliminar a ${selectedUser?.name}. Esta acción es irreversible y se perderán todos los registros asociados.`}
+                description={`Estás a punto de eliminar a ${selectedUser?.full_name}. Esta acción es irreversible y se perderán todos los registros asociados.`}
                 confirmKeyword="ELIMINAR"
             />
 

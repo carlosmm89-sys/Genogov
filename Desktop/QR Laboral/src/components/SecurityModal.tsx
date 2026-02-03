@@ -57,7 +57,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({
                                 <input
                                     type="text"
                                     value={input}
-                                    onChange={(e) => setInput(e.target.value)}
+                                    onChange={(e) => setInput(e.target.value.toUpperCase())}
                                     className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-center font-bold tracking-widest uppercase"
                                     placeholder={confirmKeyword}
                                     autoFocus
@@ -74,7 +74,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                disabled={input !== confirmKeyword}
+                                disabled={input.trim() !== confirmKeyword}
                                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-red-500/30"
                             >
                                 Confirmar Acción

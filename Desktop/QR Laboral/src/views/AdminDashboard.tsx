@@ -3,7 +3,8 @@ import autoTable from 'jspdf-autotable';
 import QRCode from "react-qr-code"; // Changed to default export
 import { NotificationToast, NotificationType } from '../components/NotificationToast';
 
-import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header, Card } from '../components/Layout';
 import { User, WorkLog, Company } from '../types';
 import { db, supabase } from '../services/supabaseService';
@@ -17,6 +18,7 @@ import { ImageUpload } from '../components/ImageUpload';
 import { WorkSitesManager } from '../components/WorkSitesManager';
 import { PDFService } from '../services/pdfService';
 import { CalendarWidget } from '../components/CalendarWidget';
+import { SecurityModal } from '../components/SecurityModal';
 
 interface AdminDashboardProps {
   user: User;
@@ -40,6 +42,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
   const [selectedEmployeeForEdit, setSelectedEmployeeForEdit] = useState<User | null>(null); // For Edit
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [workSites, setWorkSites] = useState<any[]>([]); // SITES STATE
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<User | null>(null);
 
   // Employee Filters
   const [employeeSearch, setEmployeeSearch] = useState('');
@@ -130,10 +136,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
   const handleAddEmployee = async (userData: Partial<User> & { password?: string }) => {
     const email = (userData as any).email;
 
-    if (!userData.password || userData.password.length < 6) {
-      showNotification('La contraseña debe tener al menos 6 caracteres.', 'error');
-      return;
-    }
+
 
     if (!email) {
       showNotification('El email es obligatorio.', 'error');
@@ -141,13 +144,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
     }
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // 2. Generar contraseña temporal segura
+      // (Ahora siempre es autogenerada ya que quitamos el campo del modal)
+      // 2. Generar contraseña temporal segura
+      let tempPassword = userData.password;
+      if (!tempPassword || tempPassword.length < 6) {
+        tempPassword = Math.random().toString(36).slice(-8) + "Aa1!";
+      }
+
+      // 3. Crear usuario en Auth de Supabase usando un cliente TEMPORAL
+      // Esto evita que se inicie sesión automáticamente y saque al Admin
+      const tempSupabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+
+      const { data: authData, error: authError } = await tempSupabase.auth.signUp({
         email: email,
-        password: userData.password,
+        password: tempPassword,
         options: {
           data: {
             full_name: userData.full_name,
-            company_id: user.company_id
+            company_id: user.company_id,
+            company_name: company?.name,
+            logo_url: company?.logo_url
           }
         }
       });
@@ -172,12 +193,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
       await db.saveUser(newEmp);
 
       setEmployees(prev => [...prev, newEmp]);
-      showNotification('Empleado registrado correctamente en el sistema.', 'success');
+      showNotification('Usuario creado. Se ha enviado un email de activación.', 'success');
       setShowAddModal(false);
 
     } catch (err: any) {
       console.error('Error creating employee:', err);
-      showNotification(err.message || 'Error al crear empleado.', 'error');
+
+      if (err.code === '23505' && (err.message?.includes('qr_code') || err.message?.includes('profiles_qr_code_key'))) {
+        showNotification('El código QR generado coincide con uno existente. Intente de nuevo para generar uno nuevo.', 'error');
+      } else if (err.code === '23503' || err.message?.includes('violates foreign key constraint') || err.message?.includes('User already registered')) {
+        showNotification('Error Crítico: Usuario fantasma detectado. Ejecute FIX_USER_CONFLICT.sql en Supabase.', 'error');
+      } else {
+        showNotification(err.message || 'Error al crear empleado.', 'error');
+      }
+    }
+  };
+
+  const handleResetEmployeePassword = async (email: string) => {
+    try {
+      await db.resetPasswordForEmail(email);
+      showNotification(`Correo de restablecimiento enviado correctamente a ${email}`, 'success');
+    } catch (err: any) {
+      console.error('Error sending reset email:', err);
+      showNotification('Error al enviar el correo de recuperación.', 'error');
     }
   };
 
@@ -193,9 +231,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
     }
   };
 
-  const handleDeleteEmployee = async (userId: string) => {
-    setEmployees(prev => prev.filter(emp => emp.id !== userId));
-    showNotification('Empleado eliminado', 'success');
+  const requestDeleteEmployee = (employee: User) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+    try {
+      await db.deleteUser(employeeToDelete.id);
+      setEmployees(prev => prev.filter(emp => emp.id !== employeeToDelete.id));
+      showNotification('Empleado eliminado correctamente', 'success');
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      showNotification('Error al eliminar empleado: ' + (error.message || 'Desconocido'), 'error');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setEmployeeToDelete(null);
+    }
   };
 
   const filteredEmployees = employees.filter(emp => {
@@ -292,7 +345,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
         </div>
       )}
 
-      {/* Top Navigation - Technical Style */}
+      {/* Top Navigation - Technical Style - Light Mode */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
 
@@ -309,12 +362,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
               {company?.logo_url ? (
                 <img src={company.logo_url} alt="Logo" className="h-8 w-auto mix-blend-multiply" />
               ) : (
-                <div className="h-8 w-8 bg-slate-900 rounded flex items-center justify-center text-white font-bold text-xs tracking-tighter">
-                  QR
-                </div>
+                <>
+                  <div className="h-8 w-8 bg-slate-900 rounded flex items-center justify-center text-white font-bold text-xs tracking-tighter">
+                    QR
+                  </div>
+                  <div className="hidden md:block h-6 w-px bg-slate-200 mx-2"></div>
+                  <h1 className="text-sm font-semibold text-slate-700 tracking-tight truncate max-w-[200px]">{company?.name || 'Panel de Control'}</h1>
+                </>
               )}
-              <div className="hidden md:block h-6 w-px bg-slate-200 mx-2"></div>
-              <h1 className="text-sm font-semibold text-slate-700 tracking-tight truncate max-w-[200px]">{company?.name || 'Panel de Control'}</h1>
             </div>
           </div>
 
@@ -337,9 +392,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
             <button onClick={onLogout} className="text-xs font-medium text-slate-400 hover:text-red-600 transition-colors ml-4 shrink-0 hidden md:block">
               <LogOut size={16} />
             </button>
-
-            {/* Mobile Logout (Icon only) - Optional, mainly inside drawer now but good to have fallback */}
-            {/* Not needed if drawer has it, keeping clean */}
           </div>
         </div>
       </div>
@@ -640,7 +692,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
                             <div className="w-full pt-4 border-t border-slate-50 flex justify-between items-center px-2">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{emp.position}</span>
                               <button
-                                onClick={() => handleDeleteEmployee(emp.id)}
+                                onClick={() => requestDeleteEmployee(emp)}
                                 className="text-slate-300 hover:text-rose-500 transition-colors"
                                 title="Eliminar"
                               >
@@ -697,7 +749,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
                                   <button onClick={() => { setSelectedEmployeeForEdit(emp); setShowEditModal(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Settings size={16} /></button>
                                   <button onClick={() => { setSelectedEmployee(emp); setShowQrModal(true); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><QrCode size={16} /></button>
                                   <button onClick={() => { setLogEmployeeFilter(emp.id); setActiveTab('REGISTROS'); }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><ClipboardList size={16} /></button>
-                                  <button onClick={() => handleDeleteEmployee(emp.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                                  <button onClick={() => requestDeleteEmployee(emp)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                                 </div>
                               </td>
                             </tr>
@@ -769,7 +821,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
                           <div className="w-full pt-4 border-t border-orange-100 flex justify-between items-center px-2">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{emp.position || 'Colaborador'}</span>
                             <button
-                              onClick={() => handleDeleteEmployee(emp.id)}
+                              onClick={() => requestDeleteEmployee(emp)}
                               className="text-slate-300 hover:text-rose-500 transition-colors"
                               title="Eliminar"
                             >
@@ -1350,7 +1402,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
         onClose={() => setShowEditModal(false)}
         employee={selectedEmployeeForEdit}
         onSave={handleUpdateEmployee}
-        onDelete={handleDeleteEmployee}
+        onDelete={(id) => {
+          if (selectedEmployeeForEdit && selectedEmployeeForEdit.id === id) {
+            setShowEditModal(false);
+            requestDeleteEmployee(selectedEmployeeForEdit);
+          }
+        }}
+        onResetPassword={handleResetEmployeePassword}
         availableSites={workSites}
       />
 
@@ -1359,6 +1417,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
           <NotificationToast message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
         </div>
       )}
+      <SecurityModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={executeDeleteEmployee}
+        title="¿Eliminar Empleado?"
+        description={`Estás a punto de eliminar a ${employeeToDelete?.full_name}. Esta acción es irreversible y eliminará todos sus registros, documentos y datos asociados.`}
+        confirmKeyword="ELIMINAR"
+      />
     </div>
   );
 };

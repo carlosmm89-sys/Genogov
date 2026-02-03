@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/supabaseService';
 import { User } from '../types';
-import { Keyboard, QrCode, ArrowRight, Camera, ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, QrCode, ArrowRight, Eye, EyeOff, ShieldCheck, Camera } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
 interface LoginViewProps {
@@ -16,8 +16,6 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     const [loading, setLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [isRecovering, setIsRecovering] = useState(false);
-    const [recoveryMessage, setRecoveryMessage] = useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,149 +115,263 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         setError('');
     };
 
-    return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full"></div>
+    useEffect(() => {
+        // Check for URL errors (e.g. expired links)
+        const handleUrlErrors = () => {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const queryParams = new URLSearchParams(window.location.search);
 
-            <div className="w-full max-w-md bg-white rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative z-10 animate-in fade-in zoom-in duration-700">
-                <div className="bg-indigo-600 p-12 text-center text-white space-y-3 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-10 pointer-events-none">
-                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                            <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" /></pattern></defs>
-                            <rect width="100%" height="100%" fill="url(#grid)" />
-                        </svg>
+            const errorDesc = hashParams.get('error_description') || queryParams.get('error_description');
+
+            if (errorDesc) {
+                setError(decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+            }
+        };
+
+        handleUrlErrors();
+    }, []);
+
+    const [showForgotPass, setShowForgotPass] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetSuccess, setResetSuccess] = useState(false);
+
+    const handlePasswordResetRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            const { error } = await db.resetPasswordForEmail(resetEmail);
+            if (error) throw error;
+
+            setResetSuccess(true);
+        } catch (err: any) {
+            console.error(err);
+            setError('No se pudo enviar el correo. Verifica que el email sea correcto.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex flex-col md:flex-row bg-white overflow-hidden">
+            {/* Left Side - Branding */}
+            <div className="w-full md:w-1/2 bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] text-white p-12 flex flex-col justify-between items-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-white/10 blur-[100px] rounded-full"></div>
+
+                <div className="z-10 flex flex-col items-center justify-center flex-1 text-center space-y-6">
+                    <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 mb-4 animate-in zoom-in duration-700">
+                        <QrCode size={48} className="text-white" />
                     </div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase italic leading-none">QR LABORAL</h1>
-                    <p className="text-[11px] font-black opacity-70 uppercase tracking-[0.3em]">Registro de Jornada Certificado</p>
+                    <h1 className="text-5xl font-black tracking-tighter">QR Laboral</h1>
+                    <p className="text-lg font-medium text-white/80 max-w-md leading-relaxed">
+                        Gestión inteligente del control horario impulsada por Tonwy Tech.
+                    </p>
+                    <div className="flex gap-4 pt-4">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><ShieldCheck size={20} /></div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Seguro</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><QrCode size={20} /></div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Rápido</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="p-10 flex-1 space-y-8">
-                    <div className="bg-slate-100 p-1.5 rounded-[1.5rem] flex shadow-inner">
-                        <button
-                            onClick={() => { setMethod('KEYBOARD'); setIsScanning(false); }}
-                            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.2rem] text-xs font-black transition-all duration-300 ${method === 'KEYBOARD' ? 'bg-white shadow-xl text-indigo-600 translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <Keyboard size={18} /> TECLADO
-                        </button>
-                        <button
-                            onClick={() => setMethod('QR')}
-                            className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.2rem] text-xs font-black transition-all duration-300 ${method === 'QR' ? 'bg-white shadow-xl text-indigo-600 translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <QrCode size={18} /> CÁMARA QR
-                        </button>
-                    </div>
+                <div className="z-10 text-xs font-bold uppercase tracking-widest opacity-50">
+                    © 2026 QR Laboral • Enterprise Edition
+                </div>
+            </div>
 
-                    {method === 'KEYBOARD' ? (
-                        <form onSubmit={handleLogin} className="space-y-5 animate-in slide-in-from-left-4 duration-500">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Email Corporativo</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    placeholder="ejemplo@empresa.com"
-                                    autoComplete="off"
-                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] px-6 py-4.5 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all font-bold text-slate-700"
-                                    required
-                                />
-                            </div>
+            {/* Right Side - Form */}
+            <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-slate-50/50">
+                <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-slate-100 animate-in slide-in-from-right-8 duration-700 relative">
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Contraseña</label>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        autoComplete="off"
-                                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] px-6 py-4.5 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all font-bold text-slate-700 pr-12"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                    </button>
+                    {showForgotPass ? (
+                        /* Forgot Password View */
+                        resetSuccess ? (
+                            <div className="flex flex-col items-center justify-center text-center space-y-6 py-8 animate-in fade-in zoom-in duration-500">
+                                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                                    <ShieldCheck size={40} />
                                 </div>
-                            </div>
-
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-500 animate-in slide-in-from-top-2">
-                                    <ShieldAlert size={18} />
-                                    <p className="text-[11px] font-black uppercase tracking-widest leading-tight">{error}</p>
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">¡Correo Enviado!</h3>
+                                    <p className="text-sm text-slate-500 mt-3 max-w-xs mx-auto leading-relaxed">
+                                        Hemos enviado las instrucciones de recuperación a <span className="font-bold text-slate-700">{resetEmail}</span>.
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-2">Revisa tu bandeja de entrada y SPAM.</p>
                                 </div>
-                            )}
+                                <button
+                                    onClick={() => { setShowForgotPass(false); setResetSuccess(false); setResetEmail(''); }}
+                                    className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg hover:shadow-xl mt-4"
+                                >
+                                    Volver al Login
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handlePasswordResetRequest} className="space-y-6">
+                                <div className="text-center mb-6">
+                                    <h3 className="text-xl font-bold text-slate-800">Recuperar Acceso</h3>
+                                    <p className="text-xs text-slate-500 mt-2">Introduce tu email corporativo para restablecer tu contraseña.</p>
+                                </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-[1.5rem] shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-3 group transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                            >
-                                {loading ? 'VERIFICANDO...' : 'ENTRAR AL SISTEMA'} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="space-y-8 flex flex-col items-center animate-in slide-in-from-right-4 duration-500">
-                            <div className="w-full aspect-square bg-[#0a0a0a] rounded-[3rem] relative flex items-center justify-center overflow-hidden border-[10px] border-slate-50 shadow-2xl">
-                                {isScanning ? (
-                                    <>
-                                        <Scanner
-                                            onScan={(result) => handleQRScan(result)}
-                                            onError={(error: any) => console.log(error?.message)}
-                                            components={{
-                                                finder: false
-                                            }}
-                                            styles={{
-                                                container: { width: '100%', height: '100%', borderRadius: '3rem' },
-                                                video: { width: '100%', height: '100%', objectFit: 'cover' }
-                                            }}
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Email Corporativo</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input
+                                            type="email"
+                                            value={resetEmail}
+                                            onChange={e => setResetEmail(e.target.value)}
+                                            placeholder="ejemplo@empresa.com"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-700"
+                                            required
                                         />
-                                        <div className="absolute inset-0 pointer-events-none border-[3rem] border-[#0a0a0a]/50 rounded-[3rem] z-20"></div>
-                                        <div className="scan-line z-30"></div>
-                                        <div className="absolute bottom-10 left-0 right-0 text-center z-30">
-                                            <p className="text-xs font-black uppercase tracking-[0.3em] text-white drop-shadow-md animate-pulse">Buscando Credencial...</p>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-6 group cursor-pointer" onClick={startQRScanner}>
-                                        <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center border-2 border-indigo-500/30 group-hover:scale-110 transition-transform">
-                                            <Camera size={40} className="text-indigo-400" />
-                                        </div>
-                                        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-600 text-center px-10">Pulsa para activar escáner facial/QR</p>
+                                    </div>
+                                </div>
+
+                                {error && (
+                                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-600 text-center animate-pulse">
+                                        {error}
                                     </div>
                                 )}
-                                <div className="absolute top-8 left-8 w-8 h-8 border-t-4 border-l-4 border-indigo-500/50 rounded-tl-xl"></div>
-                                <div className="absolute top-8 right-8 w-8 h-8 border-t-4 border-r-4 border-indigo-500/50 rounded-tr-xl"></div>
-                                <div className="absolute bottom-8 left-8 w-8 h-8 border-b-4 border-l-4 border-indigo-500/50 rounded-bl-xl"></div>
-                                <div className="absolute bottom-8 right-8 w-8 h-8 border-b-4 border-r-4 border-indigo-500/50 rounded-br-xl"></div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all active:scale-95 duration-200"
+                                >
+                                    {loading ? 'Enviando...' : 'Enviar Enlace de Recuperación'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowForgotPass(false); setError(''); }}
+                                    className="w-full text-xs font-bold text-slate-400 hover:text-slate-600 py-2"
+                                >
+                                    Volver al Inicio de Sesión
+                                </button>
+                            </form>
+                        )
+                    ) : (
+                        <>
+                            {/* Tabs */}
+                            <div className="flex p-1 bg-slate-100 rounded-xl mb-8">
+                                <button
+                                    onClick={() => { setMethod('KEYBOARD'); setIsScanning(false); }}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${method === 'KEYBOARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <Mail size={14} /> Credenciales
+                                </button>
+                                <button
+                                    onClick={() => setMethod('QR')}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${method === 'QR' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <QrCode size={14} /> Login QR / PIN
+                                </button>
                             </div>
 
-                            {!isScanning && (
-                                <button
-                                    onClick={startQRScanner}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-[1.5rem] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 transition-all active:scale-95"
-                                >
-                                    ABRIR CÁMARA DE ACCESO
-                                </button>
+                            {method === 'KEYBOARD' ? (
+                                <form onSubmit={handleLogin} className="space-y-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-500 ml-1">Email Corporativo</label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={e => setEmail(e.target.value)}
+                                                placeholder="ejemplo@empresa.com"
+                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-700"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center ml-1">
+                                            <label className="text-xs font-bold text-slate-500">Contraseña</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setShowForgotPass(true); setError(''); }}
+                                                className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 hover:underline"
+                                            >
+                                                ¿Olvidaste tu contraseña?
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={e => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-700"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {error && (
+                                        <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-600 text-center animate-pulse">
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all active:scale-95 duration-200"
+                                    >
+                                        {loading ? 'Accediendo...' : 'Iniciar Sesión'} <ArrowRight size={18} />
+                                    </button>
+
+                                    <p className="text-center text-[10px] text-slate-400 mt-4">Powered by Tonwy Tech v1.0.0</p>
+                                </form>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center space-y-6 py-4">
+                                    {!isScanning ? (
+                                        <button
+                                            onClick={startQRScanner}
+                                            className="w-40 h-40 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-3 hover:bg-slate-100 hover:border-indigo-400 transition-all group"
+                                        >
+                                            <Camera size={40} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                            <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600">Activar Cámara</span>
+                                        </button>
+                                    ) : (
+                                        <div className="w-full aspect-square bg-black rounded-2xl overflow-hidden relative border-4 border-slate-900 shadow-2xl">
+                                            <Scanner
+                                                onScan={handleQRScan}
+                                                onError={(e) => console.log(e)}
+                                                components={{ finder: false }}
+                                                styles={{ container: { width: '100%', height: '100%' } }}
+                                            />
+                                            <div className="absolute inset-0 border-[40px] border-black/50 z-10 pointer-events-none"></div>
+                                            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 z-20 animate-pulse shadow-[0_0_10px_red]"></div>
+                                            <button
+                                                onClick={() => setIsScanning(false)}
+                                                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full z-30"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-center text-slate-500 px-8">
+                                        Acerca tu código QR personal o muestra tu credencial al dispositivo.
+                                    </p>
+                                </div>
                             )}
-                        </div>
+                        </>
                     )}
-
-                    <div className="text-center">
-                        <a href="#" className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:underline decoration-2 underline-offset-4">¿No tienes acceso? Contacta a Soporte</a>
-                    </div>
-                </div>
-
-                <div className="p-6 bg-slate-50 flex justify-between items-center px-10 border-t border-slate-100">
-                    <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SISTEMA ONLINE</span>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">QRL v4.0</span>
                 </div>
             </div>
         </div>

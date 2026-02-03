@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Bienvenido a la Plataforma</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #334155;
+            margin: 0;
+            padding: 0;
+            background-color: #f1f5f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #4f46e5;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        h1 {
+            margin: 0 0 20px;
+            color: #0f172a;
+            font-size: 24px;
+        }
+
+        p {
+            margin: 0 0 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 
+        INSTRUCCIONES PARA EL USUARIO:
+        1. Ve a tu Panel de Supabase (https://supabase.com/dashboard).
+        2. Entra en tu Proyecto -> Authentication -> Email Templates.
+        3. Selecciona "Confirm Signup".
+        4. Borra todo el contenido actual del "Message Body".
+        5. Copia y pega TODO este código HTML.
+        6. Guarda los cambios.
+    -->
+
+    <div class="container">
+        <!-- Header con Logo (Puedes cambiar la URL del logo por la de tu empresa) -->
+        <div class="header">
+            <h2 style="color: white; margin:0; text-transform: uppercase; letter-spacing: 2px;">{{ .Data.company_name }}
+            </h2>
+        </div>
+
+        <div class="content">
+            <h1>¡Bienvenido, {{ .Data.full_name }}! 👋</h1>
+
+            <p>Se ha creado una cuenta profesional para ti en <strong>{{ .Data.company_name }}</strong>.</p>
+
+            <p>Para activar tu acceso y comenzar a registrar tu jornada laboral, por favor confirma tu correo
+                electrónico haciendo clic en el siguiente botón:</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ .ConfirmationURL }}" class="button">Confirmar mi Cuenta</a>
+            </div>
+
+            <p style="font-size: 13px; color: #64748b;">
+                Si no puedes hacer clic en el botón, copia y pega este enlace en tu navegador:<br>
+                <a href="{{ .ConfirmationURL }}" style="color: #4f46e5;">{{ .ConfirmationURL }}</a>
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+            <p style="font-size: 14px;">
+                <strong>Credenciales de Acceso:</strong><br>
+                Usuario: {{ .Email }}<br>
+                Contraseña: (La que te ha proporcionado tu administrador, podrás cambiarla al entrar)
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Copyright © 2024 {{ .Data.company_name }}. Todos los derechos reservados.</p>
+            <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+        </div>
+    </div>
+</body>
+
+</html>

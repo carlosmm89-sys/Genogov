@@ -1,21 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, Trash2, Edit2 } from 'lucide-react';
-import type { WorkCenter } from '../types';
+import type { WorkSite as WorkCenter } from '../types';
 import { supabase } from '../services/supabase';
 import { AddCenterModal } from '../components/AddCenterModal';
+import { SecurityModal } from '../components/SecurityModal';
+import { NotificationToast } from '../components/NotificationToast';
 
 export const CentersPage: React.FC = () => {
     const [centers, setCenters] = useState<WorkCenter[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // UI Feedback States
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+    const [centerToDelete, setCenterToDelete] = useState<WorkCenter | null>(null);
+
     useEffect(() => {
         loadCenters();
     }, []);
 
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
     const loadCenters = async () => {
         try {
-            // Check if table exists, if not, create it
             const { data, error } = await supabase
                 .from('work_centers')
                 .select('*')
@@ -23,7 +33,6 @@ export const CentersPage: React.FC = () => {
 
             if (error) {
                 console.error('Error loading centers:', error);
-                // If table doesn't exist, we'll show empty state
                 setCenters([]);
             } else {
                 setCenters(data || []);
@@ -52,34 +61,41 @@ export const CentersPage: React.FC = () => {
 
             if (error) {
                 console.error('Error creating center:', error);
-                alert('Error al crear el centro. Verifica que la tabla work_centers existe en Supabase.');
+                showNotification('Error al crear el centro. Verifica la conexión.', 'error');
             } else {
                 loadCenters();
+                showNotification('Centro creado correctamente.', 'success');
             }
         } catch (err) {
             console.error('Error:', err);
-            alert('Error al crear el centro.');
+            showNotification('Excepción al crear el centro.', 'error');
         }
     };
 
-    const handleDeleteCenter = async (centerId: string) => {
-        if (!confirm('¿Estás seguro de que quieres eliminar este centro?')) return;
+    const requestDeleteCenter = (center: WorkCenter) => {
+        setCenterToDelete(center);
+    };
 
+    const executeDeleteCenter = async () => {
+        if (!centerToDelete) return;
         try {
             const { error } = await supabase
                 .from('work_centers')
                 .delete()
-                .eq('id', centerId);
+                .eq('id', centerToDelete.id);
 
             if (error) {
                 console.error('Error deleting center:', error);
-                alert('Error al eliminar el centro.');
+                showNotification('Error al eliminar el centro.', 'error');
             } else {
                 loadCenters();
+                showNotification('Centro eliminado correctamente.', 'success');
             }
         } catch (err) {
             console.error('Error:', err);
-            alert('Error al eliminar el centro.');
+            showNotification('Excepción al eliminar el centro.', 'error');
+        } finally {
+            setCenterToDelete(null);
         }
     };
 
@@ -92,7 +108,7 @@ export const CentersPage: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Gestión de Centros</h1>
@@ -167,13 +183,13 @@ export const CentersPage: React.FC = () => {
                             <div className="flex gap-2 pt-4 border-t border-gray-100">
                                 <button
                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                    onClick={() => alert('Función de edición próximamente')}
+                                    onClick={() => showNotification("Función de edición en desarrollo.", "success")}
                                 >
                                     <Edit2 className="w-3.5 h-3.5" />
                                     Editar
                                 </button>
                                 <button
-                                    onClick={() => handleDeleteCenter(center.id)}
+                                    onClick={() => requestDeleteCenter(center)}
                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -190,6 +206,25 @@ export const CentersPage: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleAddCenter}
             />
+
+            <SecurityModal
+                isOpen={!!centerToDelete}
+                onClose={() => setCenterToDelete(null)}
+                onConfirm={executeDeleteCenter}
+                title="¿Eliminar Centro?"
+                description={`Estás a punto de eliminar el centro "${centerToDelete?.name}". Esta acción es irreversible.`}
+                confirmKeyword="ELIMINAR"
+            />
+
+            {notification && (
+                <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
+                    <NotificationToast
+                        message={notification.message}
+                        type={notification.type}
+                        onClose={() => setNotification(null)}
+                    />
+                </div>
+            )}
         </div>
     );
 };

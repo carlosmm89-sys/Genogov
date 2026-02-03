@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { User } from './types';
 import { db, supabase } from './services/supabaseService';
 import LoginView from './views/LoginView';
@@ -7,6 +8,7 @@ import { SuperAdminDashboardV2 } from './views/SuperAdminDashboardV2';
 import EmployeePortal from './views/EmployeePortal';
 import { PasswordResetModal } from './components/PasswordResetModal';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
+import { ResetPasswordPage } from './views/ResetPasswordPage';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -15,7 +17,45 @@ const App: React.FC = () => {
   const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
-    // Escuchar cambios de sesión de Supabase
+    // ⚡ CRITICAL: Check URL for recovery flow FIRST (synchronous, immediate)
+    const isResetPasswordRoute = window.location.pathname === '/reset-password';
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const queryType = new URLSearchParams(window.location.search).get('type');
+    const hashType = hashParams.get('type');
+
+    const isRecoveryFlow = isResetPasswordRoute || queryType === 'recovery' || hashType === 'recovery';
+
+    if (isRecoveryFlow) {
+      console.log("🔐 Recovery flow detected - showing modal immediately");
+      setShowResetModal(true);
+      setLoading(false);
+
+      // Set up auth listener ONLY, skip getSession to avoid loading issues
+      if (!supabase) return;
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth Event (Recovery Mode):', event);
+
+        if (event === 'PASSWORD_RECOVERY') {
+          setShowResetModal(true);
+          setLoading(false);
+        }
+
+        // After password is updated, redirect to login
+        if (event === 'USER_UPDATED') {
+          console.log('Password updated, redirecting to login...');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+
+    // Normal flow (non-recovery)
     if (!supabase) {
       setLoading(false);
       return;
@@ -86,11 +126,11 @@ const App: React.FC = () => {
 
       if (event === 'PASSWORD_RECOVERY') {
         setShowResetModal(true);
+        setLoading(false); // Force loading stop to show the modal
       }
 
       if (session?.user) {
         db.getProfile(session.user.id).then(user => {
-
           // --- Logic for Impersonation (Copy for Auth Change) ---
           const impersonationTargetStr = localStorage.getItem('impersonation_target');
           let isImpersonating = false;
@@ -139,7 +179,21 @@ const App: React.FC = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Timeout de seguridad para evitar carga infinita
+    const safetyTimeout = setTimeout(() => {
+      setLoading(current => {
+        if (current) {
+          console.warn("Loading timed out - forcing app render");
+          return false;
+        }
+        return current;
+      });
+    }, 6000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
   }, []);
 
   const handleLogin = (user: User) => {
@@ -169,10 +223,22 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1e1b4b] flex items-center justify-center text-white">
-        <div className="flex flex-col items-center gap-4">
+      <div className="min-h-screen bg-[#1e1b4b] flex items-center justify-center text-white relative">
+        <div className="flex flex-col items-center gap-6 p-8 bg-[#312e81] rounded-2xl shadow-2xl border border-indigo-500/30">
           <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-medium animate-pulse">Cargando Sistema...</p>
+          <div className="text-center space-y-2">
+            <p className="font-medium animate-pulse text-lg">Verificando Credenciales...</p>
+            <p className="text-xs text-indigo-300">Esto puede tardar unos segundos</p>
+          </div>
+
+          {/* Botón de escape manual tras 2 segundos */}
+          <button
+            onClick={() => { setLoading(false); setCurrentUser(null); }}
+            className="mt-4 text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-forwards opacity-0"
+            style={{ animationDelay: '3s', animationFillMode: 'forwards' }}
+          >
+            ¿Tarda demasiado? Ir al Login
+          </button>
         </div>
       </div>
     );
@@ -181,30 +247,35 @@ const App: React.FC = () => {
   const isImpersonating = !!originalUser;
 
   return (
-    <div className={`min-h-screen bg-slate-50 ${isImpersonating ? 'pt-12' : ''}`}>
-      {isImpersonating && (
-        <ImpersonationBanner user={currentUser} onExit={handleStopImpersonation} />
-      )}
+    <Routes>
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="*" element={
+        <div className={`min-h-screen bg-slate-50 ${isImpersonating ? 'pt-12' : ''}`}>
+          {isImpersonating && (
+            <ImpersonationBanner user={currentUser} onExit={handleStopImpersonation} />
+          )}
 
-      {!currentUser ? (
-        <LoginView onLogin={handleLogin} />
-      ) : currentUser.role === 'SUPERADMIN' ? (
-        <SuperAdminDashboardV2
-          user={currentUser}
-          onLogout={handleLogout}
-        />
-      ) : currentUser.role === 'ADMIN' ? (
-        <AdminDashboard
-          user={currentUser}
-          onLogout={handleLogout}
-          onSwitchUser={handleImpersonate} // Updated to use handleImpersonate
-        />
-      ) : (
-        <EmployeePortal user={currentUser} onLogout={handleLogout} />
-      )}
+          {!currentUser ? (
+            <LoginView onLogin={handleLogin} />
+          ) : currentUser.role === 'SUPERADMIN' ? (
+            <SuperAdminDashboardV2
+              user={currentUser}
+              onLogout={handleLogout}
+            />
+          ) : currentUser.role === 'ADMIN' ? (
+            <AdminDashboard
+              user={currentUser}
+              onLogout={handleLogout}
+              onSwitchUser={handleImpersonate} // Updated to use handleImpersonate
+            />
+          ) : (
+            <EmployeePortal user={currentUser} onLogout={handleLogout} />
+          )}
 
-      <PasswordResetModal isOpen={showResetModal} onClose={() => setShowResetModal(false)} />
-    </div>
+          <PasswordResetModal isOpen={showResetModal} onClose={() => setShowResetModal(false)} />
+        </div>
+      } />
+    </Routes>
   );
 };
 
