@@ -67,7 +67,6 @@ export const db = {
             console.warn('⚠️ Fallo cliente Supabase, intentando fallback fetch...', error);
 
             // Intento 2: Fetch directo (Bypass para errores 520/CORS/Red)
-            // Esto funciona porque RLS está desactivado o la Anon Key tiene permisos públicos
             const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
             const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -96,6 +95,42 @@ export const db = {
             console.error('🔥 Error crítico en getProfile:', err);
         }
 
+        return null;
+    },
+
+    getProfileByQR: async (qrCode: string): Promise<User | null> => {
+        if (!supabase) return null;
+
+        try {
+            // Intento 1: Cliente estándar Supabase
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('qr_code', qrCode)
+                .single();
+
+            if (!error && data) {
+                return data as User;
+            }
+
+            // Intento 2: Fallback Fetch
+            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+            const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?qr_code=eq.${qrCode}&select=*&limit=1`, {
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                if (response.ok) {
+                    const results = await response.json();
+                    if (results && results.length > 0) {
+                        return results[0] as User;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error getProfileByQR:', err);
+        }
         return null;
     },
 

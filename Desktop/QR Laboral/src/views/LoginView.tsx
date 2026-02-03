@@ -66,10 +66,9 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
         rawValue = rawValue.trim();
 
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawValue);
-
-        if (!isUUID) {
-            setError('QR Inválido: ' + rawValue.substring(0, 5) + '...');
+        // Validación básica de longitud (ya no exigimos UUID estricto)
+        if (rawValue.length < 3) {
+            setError('QR Inválido: Código muy corto');
             setIsScanning(false);
             return;
         }
@@ -78,24 +77,49 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         setIsScanning(false);
 
         try {
-            const profile = await db.getProfile(rawValue);
+            // 1. Intentar buscar por columna 'qr_code' (Nuevo sistema)
+            let profile = await db.getProfileByQR(rawValue);
+
+            // 2. Si falla y parece UUID, intentar buscar por ID (Sistema antiguo / Legado)
+            if (!profile) {
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawValue);
+                if (isUUID) {
+                    profile = await db.getProfile(rawValue);
+                }
+            }
 
             if (!profile) {
-                setError('Error: Empleado no encontrado. (Revisar permisos RLS)');
+                setError('Error: Código QR no reconocido en el sistema.');
                 setLoading(false);
                 return;
             }
 
             try {
+                // Verificar si ya está fichado hoy
+                const currentLog = await db.getCurrentLog(profile.id);
                 const now = new Date();
-                await db.saveLog({
-                    user_id: profile.id,
-                    company_id: profile.company_id,
-                    date: now.toISOString().split('T')[0],
-                    start_time: now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    total_hours: 0,
-                    status: 'WORKING'
-                });
+
+                if (currentLog && currentLog.status === 'WORKING') {
+                    // Si ya está trabajando, quizás deberíamos pausar o parar? 
+                    // Por ahora, el requisito suele ser "Fichar entrada". 
+                    // Si es un kiosco simple, al escanear de nuevo podría cerrar jornada.
+                    // Vamos a implementar una lógica inteligente:
+                    // Si está WORKING -> Le fichamos SALIDA (o PAUSA?) -> Mejor SALIDA para simplificar Kiosco
+                    // Pero LoginView suele ser Plogin. 
+                    // ACTUALLY: LoginView logs them IN to the portal using onLogin(profile).
+                    // The auto-clock-in (fichaje) happens inside here too.
+                }
+
+                if (!currentLog) {
+                    await db.saveLog({
+                        user_id: profile.id,
+                        company_id: profile.company_id,
+                        date: now.toISOString().split('T')[0],
+                        start_time: now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                        total_hours: 0,
+                        status: 'WORKING'
+                    });
+                }
             } catch (logError) {
                 console.warn('Auto-fichaje falló, pero permitimos acceso:', logError);
             }
