@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Role } from '../types';
-import { X, Save, User as UserIcon, Briefcase, Building, Mail, Phone, Shield, Trash2, Key, MapPin } from 'lucide-react';
+import { User, Role, WorkSchedule, EmployeeLeave } from '../types';
+import { X, Save, User as UserIcon, Briefcase, Building, Mail, Phone, Shield, Trash2, Key, MapPin, Calendar, Clock, Plane } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 import { NotificationToast } from './NotificationToast';
+import { db } from '../services/supabaseService';
 
 interface EditEmployeeModalProps {
     isOpen: boolean;
@@ -16,8 +17,178 @@ interface EditEmployeeModalProps {
 
 export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, employee, onSave, onDelete, onResetPassword, availableSites = [] }) => {
     const [formData, setFormData] = useState<Partial<User>>({});
-    const [activeTab, setActiveTab] = useState<'profile' | 'job' | 'security'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'job' | 'security' | 'attendance'>('profile');
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+    // Attendance State
+    const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
+    const [leaves, setLeaves] = useState<EmployeeLeave[]>([]);
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
+
+    useEffect(() => {
+        if (employee && activeTab === 'attendance') {
+            loadAttendanceData();
+        }
+    }, [employee, activeTab]);
+
+    const loadAttendanceData = async () => {
+        if (!employee) return;
+        setLoadingAttendance(true);
+        try {
+            const [scheds, lvs] = await Promise.all([
+                db.getSchedules(employee.id),
+                db.getEmployeeLeaves(employee.id)
+            ]);
+            setSchedules(scheds);
+            setLeaves(lvs);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingAttendance(false);
+        }
+    };
+
+    const handleScheduleChange = (id: string, field: 'start_time' | 'end_time' | 'auto_generate', value: any) => {
+        setSchedules(prev => {
+            return prev.map(s => {
+                if (s.id === id) {
+                    return { ...s, [field]: value };
+                }
+                return s;
+            });
+        });
+    };
+
+    const handleAddScheduleSlot = (day: number) => {
+        const newSchedule: WorkSchedule = {
+            id: `temp-${Date.now()}-${Math.random()}`, // Temp ID for React key
+            user_id: employee?.id || '',
+            day_of_week: day,
+            start_time: '',
+            end_time: '',
+            auto_generate: false
+        };
+        setSchedules(prev => [...prev, newSchedule]);
+    };
+
+    const handleSaveSchedule = async (scheduleId: string) => {
+        if (!employee) return;
+
+        const schedule = schedules.find(s => s.id === scheduleId);
+        if (!schedule) return;
+
+        const { start_time, end_time, auto_generate, id, day_of_week } = schedule;
+
+        // 1. Delete if empty (or user cleared it)
+        if (!start_time && !end_time) {
+            // Only delete from DB if it has a real UUID (not temp)
+            if (id && !id.startsWith('temp-')) {
+                try {
+                    await db.deleteSchedule(id);
+                    setSchedules(prev => prev.filter(s => s.id !== id));
+                    showNotification('Turno eliminado', 'success');
+                } catch (e) {
+                    console.error(e);
+                    showNotification('Error al eliminar turno', 'error');
+                }
+            } else {
+                // Just remove from state
+                setSchedules(prev => prev.filter(s => s.id !== id));
+            }
+            return;
+        }
+
+        // 2. Ignore incomplete
+        if (!start_time || !end_time) {
+            return;
+        }
+
+        // 3. Save/Update
+        // Remove temp ID before sending to DB if it's new
+        const isNew = id.startsWith('temp-');
+        const payload: Partial<WorkSchedule> = {
+            ...(isNew ? {} : { id }),
+            user_id: employee.id,
+            day_of_week,
+            start_time,
+            end_time,
+            auto_generate
+        };
+
+        try {
+            await db.saveSchedule(payload);
+            // Refresh to get real IDs
+            const updated = await db.getSchedules(employee.id);
+            setSchedules(updated);
+            showNotification('Turno guardado', 'success');
+        } catch (e) {
+            console.error(e);
+            showNotification('Error al guardar turno', 'error');
+        }
+    };
+
+    const handleDeleteSchedule = async (scheduleId: string) => {
+        if (!confirm('¿Eliminar este turno?')) return;
+
+        // If real ID, delete from DB
+        if (scheduleId && !scheduleId.startsWith('temp-')) {
+            try {
+                await db.deleteSchedule(scheduleId);
+                setSchedules(prev => prev.filter(s => s.id !== scheduleId));
+                showNotification('Turno eliminado', 'success');
+            } catch (e) {
+                console.error(e);
+                showNotification('Error al eliminar', 'error');
+            }
+        } else {
+            // Just remove from state
+            setSchedules(prev => prev.filter(s => s.id !== scheduleId));
+        }
+    };
+
+    const handleAddLeave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const type = (form.elements.namedItem('leaveType') as HTMLSelectElement).value;
+        const start = (form.elements.namedItem('leaveStart') as HTMLInputElement).value;
+        const end = (form.elements.namedItem('leaveEnd') as HTMLInputElement).value;
+
+        if (!employee || !type || !start || !end) return;
+
+        try {
+            await db.saveEmployeeLeave({
+                user_id: employee.id,
+                type: type as any,
+                start_date: start,
+                end_date: end,
+                status: 'APPROVED' // Admin doing it, so auto-approve
+            });
+            const updated = await db.getEmployeeLeaves(employee.id);
+            setLeaves(updated);
+            showNotification('Ausencia registrada', 'success');
+            form.reset();
+        } catch (err) {
+            console.error(err);
+            showNotification('Error al registrar ausencia', 'error');
+        }
+    };
+
+    const handleDeleteLeave = async (id: string) => {
+        if (!confirm('¿Eliminar esta ausencia?')) return;
+        try {
+            await db.deleteEmployeeLeave(id);
+            setLeaves(prev => prev.filter(l => l.id !== id));
+            showNotification('Ausencia eliminada', 'success');
+        } catch (err) {
+            console.error(err);
+            showNotification('Error al eliminar', 'error');
+        }
+    };
+
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
 
     useEffect(() => {
         if (employee) {
@@ -77,7 +248,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                 <div className="flex border-b border-slate-100 bg-white">
                     <TabButton id="profile" label="Perfil Personal" icon={UserIcon} isActive={activeTab === 'profile'} />
                     <TabButton id="job" label="Datos Laborales" icon={Briefcase} isActive={activeTab === 'job'} />
-                    <TabButton id="security" label="Acceso y Seguridad" icon={Shield} isActive={activeTab === 'security'} />
+                    <TabButton id="security" label="Acceso y Seguridad" icon={Key} isActive={activeTab === 'security'} />
+                    <TabButton id="attendance" label="Presencia" icon={Calendar} isActive={activeTab === 'attendance'} />
                 </div>
 
                 {/* Body */}
@@ -237,6 +409,28 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                         {/* --- SECURITY TAB --- */}
                         {activeTab === 'security' && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="space-y-4 pb-6 border-b border-slate-200">
+                                    <h3 className="text-xs font-bold text-slate-900 uppercase">Credenciales de Acceso</h3>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PIN de Seguridad (4 dígitos)</label>
+                                        <div className="relative">
+                                            <Key size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                maxLength={4}
+                                                value={formData.pin_code || ''}
+                                                onChange={e => {
+                                                    const val = e.target.value.replace(/\D/g, '');
+                                                    setFormData({ ...formData, pin_code: val });
+                                                }}
+                                                className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-semibold tracking-widest focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-mono"
+                                                placeholder="0000"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 pl-1">Usado para fichar en Muro QR y Kiosco.</p>
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rol de Sistema</label>
                                     <div className="grid grid-cols-2 gap-3">
@@ -307,6 +501,193 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* --- ATTENDANCE TAB --- */}
+                        {activeTab === 'attendance' && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+
+                                {/* Weekly Schedule */}
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-bold text-slate-900 uppercase flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <Clock size={16} className="text-indigo-500" /> Horario Semanal Fijo
+                                    </h3>
+
+                                    <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
+                                        {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((dName, idx) => {
+                                            const dayNum = idx + 1;
+                                            const daySchedules = schedules.filter(s => s.day_of_week === dayNum);
+
+                                            // Always show at least one row if empty? Or just the header + add button?
+                                            // Let's standard: Row header + list of shifts
+
+                                            return (
+                                                <div key={dayNum} className="p-3 flex items-start justify-between hover:bg-slate-50 transition-colors gap-4">
+                                                    <div className="w-24 pt-2 text-xs font-bold text-slate-600 shrink-0">{dName}</div>
+
+                                                    <div className="flex-1 space-y-2">
+                                                        {daySchedules.map((sched, sIdx) => (
+                                                            <div key={sched.id} className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                                                                <input type="time"
+                                                                    className="bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500"
+                                                                    value={sched.start_time || ''}
+                                                                    onChange={(e) => handleScheduleChange(sched.id, 'start_time', e.target.value)}
+                                                                    onBlur={() => handleSaveSchedule(sched.id)}
+                                                                />
+                                                                <span className="text-slate-400 text-xs">-</span>
+                                                                <input type="time"
+                                                                    className="bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500"
+                                                                    value={sched.end_time || ''}
+                                                                    onChange={(e) => handleScheduleChange(sched.id, 'end_time', e.target.value)}
+                                                                    onBlur={() => handleSaveSchedule(sched.id)}
+                                                                />
+
+                                                                <label className="flex items-center gap-1 cursor-pointer ml-2" title="Auto-generar fichaje">
+                                                                    <input type="checkbox"
+                                                                        className="accent-indigo-600 w-3 h-3 rounded"
+                                                                        checked={sched.auto_generate || false}
+                                                                        onChange={(e) => {
+                                                                            const checked = e.target.checked;
+                                                                            handleScheduleChange(sched.id, 'auto_generate', checked);
+                                                                            // Save immediately on checkbox toggle
+                                                                            // We need to pass the ID to save logic, which pulls current state
+                                                                            // But state update is async.
+                                                                            // Small delay or use local variable if we refactor save.
+                                                                            // For now, simple timeout works best without major refactor.
+                                                                            setTimeout(() => handleSaveSchedule(sched.id), 100);
+                                                                        }}
+                                                                    />
+                                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Auto</span>
+                                                                </label>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDeleteSchedule(sched.id)}
+                                                                    className="p-1 text-slate-300 hover:text-rose-500 transition-colors ml-auto"
+                                                                    title="Eliminar turno"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        {daySchedules.length === 0 && (
+                                                            <div className="text-[10px] text-slate-400 italic pt-2">Sin horario asignado</div>
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAddScheduleSlot(dayNum)}
+                                                        className="mt-1 p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors"
+                                                        title="Añadir turno"
+                                                    >
+                                                        <span className="w-3.5 h-3.5 font-bold flex items-center justify-center text-lg leading-none pb-0.5" >+</span>
+                                                        {/* Using simple text + for reliability if icon issues, but Lucide Plus is standard. 
+                                                            Actually, let's use a simple + styling or Plus icon if imported. 
+                                                            I didn't see Plus imported. I'll use a text. 
+                                                        */}
+                                                        <span className="font-bold text-xs leading-none">+</span>
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-[10px] text-slate-400">Si se define, se generarán fichajes automáticos si el empleado olvida fichar (según config).</p>
+                                </div>
+
+                                {/* Leaves */}
+                                <div className="space-y-4 pt-6 border-t border-slate-200">
+                                    <h3 className="text-xs font-bold text-slate-900 uppercase flex items-center gap-2 pb-2 border-b border-slate-100">
+                                        <Plane size={16} className="text-indigo-500" /> Ausencias y Permisos
+                                    </h3>
+
+                                    {/* Add Form */}
+                                    <div className="flex gap-2 items-end bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                                        <div className="flex-1 space-y-1">
+                                            <label className="text-[10px] font-bold text-indigo-400 uppercase">Tipo</label>
+                                            <select name="leaveType" form="add-leave-form" className="w-full text-xs p-2 border border-slate-200 rounded">
+                                                <option value="VACATION">Vacaciones</option>
+                                                <option value="SICK_LEAVE">Baja Médica</option>
+                                                <option value="PERSONAL">Asuntos Propios</option>
+                                                <option value="OTHER">Otro</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                            <label className="text-[10px] font-bold text-indigo-400 uppercase">Desde</label>
+                                            <input name="leaveStart" type="date" className="w-full text-xs p-2 border border-slate-200 rounded" />
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                            <label className="text-[10px] font-bold text-indigo-400 uppercase">Hasta</label>
+                                            <input name="leaveEnd" type="date" className="w-full text-xs p-2 border border-slate-200 rounded" />
+                                        </div>
+                                        <button type="button" onClick={(e) => {
+                                            const type = (document.getElementsByName('leaveType')[0] as any).value;
+                                            const start = (document.getElementsByName('leaveStart')[0] as any).value;
+                                            const end = (document.getElementsByName('leaveEnd')[0] as any).value;
+
+                                            if (!start || !end) {
+                                                showNotification('Selecciona fechas para la ausencia', 'error');
+                                                return;
+                                            }
+
+                                            const fakeE = {
+                                                preventDefault: () => { },
+                                                target: {
+                                                    elements: {
+                                                        namedItem: (n: string) => {
+                                                            if (n === 'leaveType') return { value: type };
+                                                            if (n === 'leaveStart') return { value: start };
+                                                            if (n === 'leaveEnd') return { value: end };
+                                                            return { value: '' };
+                                                        }
+                                                    }
+                                                }
+                                            } as any;
+                                            handleAddLeave(fakeE);
+
+                                            // Clear inputs manually after save
+                                            (document.getElementsByName('leaveStart')[0] as any).value = '';
+                                            (document.getElementsByName('leaveEnd')[0] as any).value = '';
+
+                                        }} className="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700 transition-colors">
+                                            <Save size={16} />
+                                        </button>
+                                    </div>
+
+                                    {/* List */}
+                                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-slate-50 text-slate-500">
+                                                <tr>
+                                                    <th className="px-4 py-2">Tipo</th>
+                                                    <th className="px-4 py-2">Desde</th>
+                                                    <th className="px-4 py-2">Hasta</th>
+                                                    <th className="px-4 py-2 text-right"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {leaves.map(l => (
+                                                    <tr key={l.id}>
+                                                        <td className="px-4 py-2 font-bold text-slate-700">
+                                                            {l.type === 'VACATION' ? '🏖️ Vacaciones' : l.type === 'SICK_LEAVE' ? '💊 Baja' : '📝 Personal'}
+                                                        </td>
+                                                        <td className="px-4 py-2 font-mono text-slate-500">{new Date(l.start_date).toLocaleDateString()}</td>
+                                                        <td className="px-4 py-2 font-mono text-slate-500">{new Date(l.end_date).toLocaleDateString()}</td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <button type="button" onClick={() => handleDeleteLeave(l.id)} className="text-rose-400 hover:text-rose-600">
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {leaves.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-slate-400 italic">No hay ausencias registradas.</td></tr>}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
                             </div>
                         )}
 

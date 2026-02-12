@@ -268,6 +268,43 @@ export const db = {
         }
     },
 
+    // Secure Clock In (RPC)
+    clockInRPC: async (userId: string, pin: string, method: string, siteId?: string, location?: any) => {
+        if (!supabase) throw new Error('Supabase no inicializado');
+
+        try {
+            const { data, error } = await supabase.rpc('rpc_clock_in', {
+                p_user_id: userId,
+                p_pin: pin,
+                p_method: method,
+                p_site_id: siteId,
+                p_location: location
+            });
+
+            if (error) throw error;
+            return data; // { action: 'ENTRY'|'EXIT', message: '...', ... }
+
+        } catch (e: any) {
+            console.error('Error in clockInRPC:', e);
+            throw new Error(e.message || 'Error al procesar fichaje seguro');
+        }
+    },
+
+
+
+    // Automation
+    runAutomationRPC: async () => {
+        if (!supabase) return;
+        try {
+            const { data, error } = await supabase.rpc('process_automated_attendance');
+            if (error) throw error;
+            return data;
+        } catch (e: any) {
+            console.error('Error running automation:', e);
+            throw new Error(e.message || 'Error executing automation');
+        }
+    },
+
     getCurrentLog: async (userId: string): Promise<WorkLog | null> => {
         if (!supabase) return null;
         const today = new Date().toISOString().split('T')[0];
@@ -581,6 +618,83 @@ export const db = {
     deleteProjectExpense: async (id: string) => {
         if (!supabase) return;
         const { error } = await supabase.from('work_site_expenses').delete().eq('id', id);
+        if (error) throw error;
+    },
+
+    // ---------------------------
+    // v2 Features: Schedules & Leaves
+    // ---------------------------
+
+    // Schedules
+    getSchedules: async (userId: string) => {
+        if (!supabase) return [];
+        const { data, error } = await supabase
+            .from('work_schedules')
+            .select('*')
+            .eq('user_id', userId)
+            .order('day_of_week', { ascending: true });
+        if (error) { console.error(error); return []; }
+        return data || [];
+    },
+
+    saveSchedule: async (schedule: any) => {
+        if (!supabase) return;
+        // Upsert (by ID if present, otherwise insert) - Constraint removed for split shifts
+        const { error } = await supabase.from('work_schedules').upsert(schedule);
+        if (error) throw error;
+    },
+
+    deleteSchedule: async (id: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('work_schedules').delete().eq('id', id);
+        if (error) throw error;
+    },
+
+    // Holidays
+    getCompanyHolidays: async (companyId: string) => {
+        if (!supabase) return [];
+        const { data, error } = await supabase
+            .from('company_holidays')
+            .select('*')
+            .eq('company_id', companyId)
+            .order('date', { ascending: true });
+        if (error) { console.error(error); return []; }
+        return data || [];
+    },
+
+    saveCompanyHoliday: async (holiday: any) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('company_holidays').upsert(holiday);
+        if (error) throw error;
+    },
+
+    deleteCompanyHoliday: async (id: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('company_holidays').delete().eq('id', id);
+        if (error) throw error;
+    },
+
+    // Leaves
+    getEmployeeLeaves: async (userId: string) => {
+        if (!supabase) return [];
+        const { data, error } = await supabase
+            .from('employee_leaves')
+            .select('*')
+            .eq('user_id', userId)
+            .order('start_date', { ascending: false });
+        if (error) { console.error(error); return []; }
+        return data || [];
+    },
+
+    saveEmployeeLeave: async (leave: any) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('employee_leaves').upsert(leave);
+        if (error) throw error;
+    },
+
+    deleteEmployeeLeave: async (id: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('employee_leaves').delete().eq('id', id);
         if (error) throw error;
     },
 };
