@@ -173,7 +173,7 @@ export const db = {
 
         try {
             // Intento 1
-            let query = supabase.from('work_logs').select('*').order('date', { ascending: false });
+            let query = supabase.from('work_logs').select('*').order('date', { ascending: false }).order('start_time', { ascending: false });
             if (userId) query = query.eq('user_id', userId);
             else if (companyId) query = query.eq('company_id', companyId);
 
@@ -186,7 +186,7 @@ export const db = {
             const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
             if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-                let url = `${SUPABASE_URL}/rest/v1/work_logs?select=*&order=date.desc`;
+                let url = `${SUPABASE_URL}/rest/v1/work_logs?select=*&order=date.desc,start_time.desc`;
                 if (userId) url += `&user_id=eq.${userId}`;
                 else if (companyId) url += `&company_id=eq.${companyId}`;
 

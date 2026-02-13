@@ -25,6 +25,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
     const [leaves, setLeaves] = useState<EmployeeLeave[]>([]);
     const [loadingAttendance, setLoadingAttendance] = useState(false);
 
+    // Ref to hold latest schedules to avoid stale closures in async timeouts
+    const schedulesRef = React.useRef(schedules);
+    const savingRef = React.useRef(new Set<string>()); // Lock to prevent concurrent saves of same ID
+
+    useEffect(() => {
+        schedulesRef.current = schedules;
+    }, [schedules]);
+
     useEffect(() => {
         if (employee && activeTab === 'attendance') {
             loadAttendanceData();
@@ -74,8 +82,12 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
     const handleSaveSchedule = async (scheduleId: string, updates?: Partial<WorkSchedule>) => {
         if (!employee) return;
 
-        const foundSchedule = schedules.find(s => s.id === scheduleId);
-        if (!foundSchedule) return;
+        // Check lock
+        if (savingRef.current.has(scheduleId)) return;
+
+        // Look up in REF to get latest state (avoids stale duplicate inserts)
+        const foundSchedule = schedulesRef.current.find(s => s.id === scheduleId);
+        if (!foundSchedule) return; // ID might have changed (temp -> real) or deleted
 
         // Merge updates (like auto_generate override)
         const schedule = { ...foundSchedule, ...updates };
@@ -119,6 +131,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
         };
 
         try {
+            savingRef.current.add(scheduleId); // Lock
             await db.saveSchedule(payload);
             // Refresh to get real IDs
             const updated = await db.getSchedules(employee.id);
@@ -127,6 +140,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
         } catch (e) {
             console.error(e);
             showNotification('Error al guardar turno', 'error');
+        } finally {
+            savingRef.current.delete(scheduleId); // Unlock
         }
     };
 
@@ -582,11 +597,6 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                                                         className="mt-1 p-1 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors"
                                                         title="Añadir turno"
                                                     >
-                                                        <span className="w-3.5 h-3.5 font-bold flex items-center justify-center text-lg leading-none pb-0.5" >+</span>
-                                                        {/* Using simple text + for reliability if icon issues, but Lucide Plus is standard. 
-                                                            Actually, let's use a simple + styling or Plus icon if imported. 
-                                                            I didn't see Plus imported. I'll use a text. 
-                                                        */}
                                                         <span className="font-bold text-xs leading-none">+</span>
                                                     </button>
                                                 </div>
