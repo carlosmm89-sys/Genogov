@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../services/supabaseService';
+import { db, supabase } from '../services/supabaseService';
 import { User } from '../types';
 import { Mail, Lock, QrCode, ArrowRight, Eye, EyeOff, ShieldCheck, Camera } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
@@ -360,6 +360,69 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                     </button>
 
                                     <p className="text-center text-[10px] text-slate-400 mt-4">Powered by Tonwy Tech v1.0.0</p>
+
+                                    {/* DEV REAL AUTH BUTTON - ONLY LOCALHOST */}
+                                    {window.location.hostname === 'localhost' && (
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const devEmail = 'dev@localhost';
+                                                const devPass = '123456';
+                                                setLoading(true);
+
+                                                try {
+                                                    // 1. Try Login
+                                                    let { data: loginData, error: loginError } = await db.signIn(devEmail, devPass);
+
+                                                    // 2. If fails, Try Register
+                                                    if (loginError || !loginData.user) {
+                                                        const { data: signUpData, error: signUpError } = await supabase!.auth.signUp({
+                                                            email: devEmail,
+                                                            password: devPass
+                                                        });
+                                                        if (signUpError) throw signUpError;
+                                                        // Auto login usually happens after signup in Supabase local/dev
+                                                        if (signUpData.user) {
+                                                            // Force Login again just to be sure
+                                                            const res = await db.signIn(devEmail, devPass);
+                                                            loginData = res.data;
+                                                        }
+                                                    }
+
+                                                    if (!loginData.user) throw new Error("No se pudo autenticar");
+
+                                                    // 3. Call Setup RPC (to ensure SuperAdmin role)
+                                                    const { error: rpcError } = await supabase!.rpc('setup_dev_environment');
+
+                                                    if (rpcError) {
+                                                        console.error("RPC Error:", rpcError);
+                                                        await supabase!.auth.signOut(); // Force Logout
+                                                        alert(`⚠️ Error SQL: ${rpcError.message}\n\nAsegúrate de ejecutar 'dev_setup.sql' y REFRESCA la página.`);
+                                                        return;
+                                                    }
+
+                                                    // 4. Load Profile & Proceed
+                                                    const profile = await db.getProfile(loginData.user.id);
+
+                                                    if (!profile) {
+                                                        throw new Error("Perfil no encontrado tras setup. Revisa logs.");
+                                                    }
+
+                                                    onLogin(profile);
+
+                                                } catch (err: any) {
+                                                    console.error(err);
+                                                    if (err.message !== "No se pudo autenticar") await supabase!.auth.signOut();
+                                                    setError("Error Dev: " + err.message);
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="w-full mt-4 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border-2 border-dashed border-indigo-300 transition-colors"
+                                        >
+                                            🛠️ MODO DESARROLLADOR (Real Auth)
+                                        </button>
+                                    )}
                                 </form>
                             ) : (
                                 <div className="flex flex-col items-center justify-center space-y-6 py-4">

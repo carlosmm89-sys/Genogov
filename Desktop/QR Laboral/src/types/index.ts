@@ -16,6 +16,8 @@ export interface User {
     is_external?: boolean; // New field for external employees
     dni?: string;
     phone?: string;
+    pin_code?: string;
+    is_active?: boolean;
 }
 
 export interface WorkSite {
@@ -87,6 +89,10 @@ export interface WorkLog {
     breaks?: Array<{ start: string; end?: string }>; // ISO strings
     ip_address?: string; // New field for IP
     user_agent?: string; // New field for User Agent
+    // New v2 fields
+    method?: 'MANUAL' | 'KIOSK' | 'WALL_QR' | 'REMOTE' | 'AUTOMATIC';
+    verified?: boolean;
+    location_coords?: { lat: number; lng: number };
 }
 
 export interface Company {
@@ -112,4 +118,40 @@ export interface Company {
         from_email?: string;
         from_name?: string;
     };
+    // New Config Fields
+    config_clock_methods?: {
+        kiosk: boolean;
+        wall_qr: boolean;
+        remote: boolean;
+        manual: boolean;
+    };
+    config_require_location?: boolean;
+}
+
+export interface WorkSchedule {
+    id: string;
+    user_id: string;
+    day_of_week: number; // 1=Monday, 7=Sunday
+    start_time: string; // HH:mm:ss
+    end_time: string; // HH:mm:ss
+    auto_generate: boolean;
+}
+
+export interface CompanyHoliday {
+    id: string;
+    company_id: string;
+    date: string; // YYYY-MM-DD
+    end_date?: string; // Optional end date for multi-day holidays
+    name: string;
+    is_recurring: boolean;
+}
+
+export interface EmployeeLeave {
+    id: string;
+    user_id: string;
+    start_date: string; // YYYY-MM-DD
+    end_date: string; // YYYY-MM-DD
+    type: 'VACATION' | 'SICK_LEAVE' | 'PERSONAL' | 'OTHER';
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    reason?: string;
 }

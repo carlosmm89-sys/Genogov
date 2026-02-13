@@ -29,7 +29,16 @@ export const ShowQRCodeModal: React.FC<ShowQRCodeModalProps> = ({ isOpen, onClos
 
                 <div className="p-10 flex flex-col items-center space-y-8">
                     <div className="p-6 bg-white rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100">
-                        <QRCode value={employee.qr_code || employee.id} size={200} viewBox={`0 0 256 256`} />
+                        {/* QR Real: Incluye ID y Secreto para bypass de búsqueda insegura */}
+                        <QRCode
+                            value={JSON.stringify({
+                                t: 'emp', // type
+                                id: employee.id,
+                                sc: employee.qr_code || '' // secret code
+                            })}
+                            size={200}
+                            viewBox={`0 0 256 256`}
+                        />
                     </div>
 
                     <div className="text-center space-y-2 print:hidden">

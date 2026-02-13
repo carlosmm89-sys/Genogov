@@ -64,31 +64,51 @@ export const WorkSitesManager: React.FC<WorkSitesManagerProps> = ({ company, emp
     );
 
     const handleAddSite = async () => {
+        setLoading(true);
         const isDemo = company.id === 'demo-company-id';
+
+        // Intentar obtener ubicación antes de crear
+        let lat = company.location_lat || 40.4168; // Defecto: Madrid
+        let lng = company.location_lng || -3.7038;
+
+        if (navigator.geolocation) {
+            try {
+                const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        timeout: 5000,
+                        enableHighAccuracy: true
+                    });
+                });
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+            } catch (error) {
+                console.warn("Geolocation failed or timed out", error);
+            }
+        }
+
         const newSite: WorkSite = {
             id: isDemo ? 'demo-site-' + Date.now() : crypto.randomUUID(),
             company_id: company.id,
-            name: 'Nueva Obra / Centro',
-            location_lat: company.location_lat || 0,
-            location_lng: company.location_lng || 0,
+            name: 'Nuevo Centro',
+            location_lat: lat,
+            location_lng: lng,
             location_radius: 500,
             is_active: true
         };
 
-        // Try to get current location immediately
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                newSite.location_lat = pos.coords.latitude;
-                newSite.location_lng = pos.coords.longitude;
-            });
-        }
-
         // Add to local state first
-        setSites([...sites, newSite]);
+        setSites(prev => [...prev, newSite]);
 
         if (!isDemo) {
-            await db.saveWorkSite(newSite);
+            try {
+                await db.saveWorkSite(newSite);
+                showNotification('Nuevo centro creado', 'success');
+            } catch (error) {
+                console.error(error);
+                showNotification('Error al crear centro', 'error');
+            }
         }
+        setLoading(false);
     };
 
     const updateSite = (id: string, updates: Partial<WorkSite>) => {
@@ -190,7 +210,7 @@ export const WorkSitesManager: React.FC<WorkSitesManagerProps> = ({ company, emp
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             type="text"
-                            placeholder="Buscar obra..."
+                            placeholder="Buscar centro..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 transition-colors"
@@ -228,7 +248,7 @@ export const WorkSitesManager: React.FC<WorkSitesManagerProps> = ({ company, emp
                         onClick={handleAddSite}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-indigo-600/20 whitespace-nowrap"
                     >
-                        <Plus size={18} /> Nueva Obra
+                        <Plus size={18} /> Nuevo Centro
                     </button>
                 </div>
             </div>

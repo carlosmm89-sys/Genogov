@@ -6,7 +6,7 @@ import { WorkLog, User } from '../types';
 export const PDFService = {
     generateWorkReport: (logs: WorkLog[], employee: User, startDate: string, endDate: string) => {
         const doc = new jsPDF();
-
+        // ... (existing logic)
         // Header
         doc.setFontSize(18);
         doc.text('Informe de Registro de Jornada', 14, 22);
@@ -47,5 +47,41 @@ export const PDFService = {
 
         // Save
         doc.save(`Registro_Jornada_${employee.full_name.replace(/\s+/g, '_')}_${startDate}.pdf`);
+    },
+
+    generateLegalReport: (company: any, logs: WorkLog[], employees: User[], options: { startDate: Date, endDate: Date }) => {
+        const doc = new jsPDF();
+        const startStr = options.startDate.toLocaleDateString();
+        const endStr = options.endDate.toLocaleDateString();
+
+        doc.setFontSize(18);
+        doc.text('Informe Legal de Registro de Jornada', 14, 22);
+        doc.setFontSize(12);
+        doc.text(company?.name || 'Empresa', 14, 30);
+        doc.setFontSize(10);
+        doc.text(`Periodo: ${startStr} - ${endStr}`, 14, 38);
+
+        const tableData = logs.map(log => {
+            const emp = employees.find(e => e.id === log.user_id);
+            return [
+                emp?.full_name || 'Desconocido',
+                emp?.dni || '-',
+                new Date(log.date).toLocaleDateString(),
+                log.start_time,
+                log.end_time || '-',
+                log.total_hours.toFixed(2),
+                log.verified ? 'Sí' : 'No'
+            ];
+        });
+
+        autoTable(doc, {
+            head: [['Empleado', 'DNI', 'Fecha', 'Entrada', 'Salida', 'Horas', 'Verificado']],
+            body: tableData,
+            startY: 45,
+            theme: 'striped',
+            styles: { fontSize: 8 }
+        });
+
+        doc.save(`Informe_Legal_${startStr}_${endStr}.pdf`);
     }
 };

@@ -6,6 +6,8 @@ import LoginView from './views/LoginView';
 import AdminDashboard from './views/AdminDashboard';
 import { SuperAdminDashboardV2 } from './views/SuperAdminDashboardV2';
 import EmployeePortal from './views/EmployeePortal';
+import WallQRView from './views/WallQRView';
+import KioskView from './views/KioskView';
 import { PasswordResetModal } from './components/PasswordResetModal';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { ResetPasswordPage } from './views/ResetPasswordPage';
@@ -249,6 +251,8 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/checkin/:siteId" element={<WallQRView />} />
+      <Route path="/kiosk/:siteId" element={<KioskView />} />
       <Route path="*" element={
         <div className={`min-h-screen bg-slate-50 ${isImpersonating ? 'pt-12' : ''}`}>
           {isImpersonating && (

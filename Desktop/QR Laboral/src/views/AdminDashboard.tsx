@@ -126,12 +126,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
     monthlyHours: logs.reduce((acc, l) => acc + (l.total_hours || 0), 0).toFixed(1)
   };
 
-  const chartData = [
-    { name: 'Sistemas', hours: 45, color: '#6366f1' },
-    { name: 'Ventas', hours: 120, color: '#8b5cf6' },
-    { name: 'Operaciones', hours: 88, color: '#06b6d4' },
-    { name: 'Dirección', hours: 32, color: '#f43f5e' },
-  ];
+  // Calculate chart data from real logs
+  const deptMap: Record<string, number> = {};
+  logs.forEach(log => {
+    const user = employees.find(u => u.id === log.user_id);
+    const dept = user?.department || 'Sin Departamento';
+    if (!deptMap[dept]) deptMap[dept] = 0;
+    deptMap[dept] += log.total_hours || 0;
+  });
+
+  const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#f43f5e', '#10b981', '#f59e0b'];
+  const chartData = Object.entries(deptMap).length > 0
+    ? Object.entries(deptMap).map(([name, hours], idx) => ({
+      name,
+      hours: parseFloat(hours.toFixed(2)),
+      color: colors[idx % colors.length]
+    }))
+    : [{ name: 'Sin datos', hours: 0, color: '#e2e8f0' }];
 
   const handleAddEmployee = async (userData: Partial<User> & { password?: string }) => {
     const email = (userData as any).email;
@@ -1027,7 +1038,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onSwitc
                             // Selection logic removed
                             return (
                               <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-slate-700">{emp?.full_name || 'Desconocido'}</td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-slate-700">{emp?.full_name || 'Desconocido'}</span>
+                                    {log.method === 'AUTOMATIC' && (
+                                      <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase tracking-wide">
+                                        AUTO
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="px-6 py-4 text-slate-500 font-mono text-xs">{new Date(log.date).toLocaleDateString()}</td>
                                 <td className="px-6 py-4 text-center">
                                   <span className="inline-flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded">

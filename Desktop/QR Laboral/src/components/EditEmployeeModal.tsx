@@ -71,11 +71,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
         setSchedules(prev => [...prev, newSchedule]);
     };
 
-    const handleSaveSchedule = async (scheduleId: string) => {
+    const handleSaveSchedule = async (scheduleId: string, updates?: Partial<WorkSchedule>) => {
         if (!employee) return;
 
-        const schedule = schedules.find(s => s.id === scheduleId);
-        if (!schedule) return;
+        const foundSchedule = schedules.find(s => s.id === scheduleId);
+        if (!foundSchedule) return;
+
+        // Merge updates (like auto_generate override)
+        const schedule = { ...foundSchedule, ...updates };
 
         const { start_time, end_time, auto_generate, id, day_of_week } = schedule;
 
@@ -550,12 +553,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                                                                         onChange={(e) => {
                                                                             const checked = e.target.checked;
                                                                             handleScheduleChange(sched.id, 'auto_generate', checked);
-                                                                            // Save immediately on checkbox toggle
-                                                                            // We need to pass the ID to save logic, which pulls current state
-                                                                            // But state update is async.
-                                                                            // Small delay or use local variable if we refactor save.
-                                                                            // For now, simple timeout works best without major refactor.
-                                                                            setTimeout(() => handleSaveSchedule(sched.id), 100);
+                                                                            // Save immediately on checkbox toggle - PASS EXPLICIT OVERRIDE
+                                                                            setTimeout(() => handleSaveSchedule(sched.id, { auto_generate: checked }), 100);
                                                                         }}
                                                                     />
                                                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Auto</span>
