@@ -17,7 +17,6 @@ import '@xyflow/react/dist/style.css';
 import { Individual, Family, Gender, RelationType, RiskLevel, createIndividual, createFamily } from './types';
 import { IndividualNode, FamilyNode } from './components/Nodes';
 import { GenogramEdge } from './components/Edges';
-import { GoogleGenAI } from "@google/genai";
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -41,8 +40,6 @@ import {
   Sparkles,
   Loader2
 } from 'lucide-react';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -180,38 +177,25 @@ export default function App() {
   const runAiDiagnosis = async () => {
     if (individuals.length === 0) return;
     setIsAnalyzing(true);
-    await logAction("IA Diagnosis", "Se ha solicitado un diagnóstico social asistido por IA.");
-    try {
-      const prompt = `Actúa como un experto en Trabajo Social. Analiza el siguiente genograma familiar y proporciona un diagnóstico social profesional, identificando riesgos, fortalezas y sugerencias de intervención municipal.
-      
-      Datos de la familia:
-      ${JSON.stringify(individuals.map(i => ({
-        nombre: i.firstName,
-        genero: i.gender,
-        riesgo: i.riskLevel,
-        fallecido: i.isDeceased,
-        notas: i.notes
-      })))}
-      
-      Relaciones:
-      ${JSON.stringify(edges.map(e => ({
-        tipo: e.data?.relationType
-      })))}
-      
-      Proporciona el diagnóstico en formato Markdown estructurado.`;
+    await logAction("IA Diagnosis", "Se ha solicitado un diagnóstico social asistido.");
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-      });
+    // Funcionalidad AI desactivada temporalmente a petición del usuario
+    setTimeout(() => {
+      setAiDiagnosis(`### Diagnóstico Social (Modo Offline)
+      
+Actualmente la funcionalidad de Inteligencia Artificial para el análisis de expedientes se encuentra inactiva.
 
-      setAiDiagnosis(response.text || "No se pudo generar el diagnóstico.");
-    } catch (error) {
-      console.error("AI Error:", error);
-      setAiDiagnosis("Error al conectar con el motor de IA municipal.");
-    } finally {
+**Resumen de la estructura actual:**
+- **Individuos registrados:** ${individuals.length} persona(s)
+- **Vínculos y relaciones:** ${edges.length} conexión(es)
+- **Casos de Riesgo Alto:** ${individuals.filter(i => i.riskLevel === RiskLevel.HIGH).length}
+- **Casos de Riesgo Medio:** ${individuals.filter(i => i.riskLevel === RiskLevel.MEDIUM).length}
+
+**Sugerencia de intervención:** 
+Revisar manualmente los marcadores de vulnerabilidad de los miembros con alertas antes de continuar el proceso de Servicios Sociales.
+      `);
       setIsAnalyzing(false);
-    }
+    }, 1500);
   };
 
   const exportGedcom = () => {
