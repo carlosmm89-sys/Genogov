@@ -1,0 +1,943 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<GenoPro>
+  <Software>GenoPro
+    <Name>GenoPro® - Picture Your Family Tree!(TM)</Name>
+    <Version>3.1.0.1</Version>
+    <Address>http://www.genopro.com</Address>
+  </Software>
+  <Date>26 Jun 2020</Date>
+
+<Global>
+  <Name>
+    <Full Format="%T %F (%N) %M %L (%L2) %S"/>
+    <Display Format="%F %M %L (%L2)" Lines="3"/>
+  </Name>
+  <Font>Franklin Gothic Medium Cond</Font>
+  <Display>
+    <Tag>DrName</Tag>
+    <Colors>
+      <Gender Symbol="#000000" Text="#000000" Fill="#FFFFFF">
+        <Fill>
+          <Top Left="#FF0000" Right="#FF0000"/>
+          <Bottom Left="#FF0000" Right="#FF0000"/>
+        </Fill>
+      </Gender>
+      <Border Outline="#6E6EFF">
+        <Fill>#FFFF80</Fill>
+      </Border>
+      <Label Top="#000000" Bottom="#000000">
+        <Fill Top="#FFFFFF" Bottom="#FFFFFF"/>
+      </Label>
+    </Colors>
+  </Display>
+  <Tags ID="Individual">
+    <TagData Name="DrName">
+      <DisplayName>Dr Name</DisplayName>
+      <Description>Name of the doctor</Description>
+    </TagData>
+    <TagData Name="new_custom_tag">
+      <DisplayName>new_custom_tag</DisplayName>
+    </TagData>
+    <DialogLayout Name="Custom Tags">
+      <Description>A custom tag is a generic placeholder to record additional information.&#32; You can customize those tags by using the Tag Editor from the Tools menu.</Description>
+    </DialogLayout>
+  </Tags>
+  <Tags ID="Medical">
+    <TagData Name="DrName">
+      <DisplayName>Dr. Name</DisplayName>
+      <Description>Enter Dr. Name</Description>
+    </TagData>
+    <TagData Name="telNumber">
+      <DisplayName>Telephone Number</DisplayName>
+      <Description>Enter the Dr. Telephone number</Description>
+    </TagData>
+    <DialogLayout Name="Primary Care Dr.">
+      <Description>Information of who is the primary care doctor</Description>
+      <Tags>DrName, telNumber</Tags>
+    </DialogLayout>
+  </Tags>
+  <ActiveGenoMap>COVID19 Testing</ActiveGenoMap>
+  <Options HideGridlines="Y"/>
+</Global>
+<GenoMaps>
+<GenoMap Name="COVID19 Testing" Zoom="110" Position="76,-64" BoundaryRect="-519,225,426,-340"/>
+</GenoMaps>
+<Individuals>
+<Individual ID="ind00003">
+  <Name>Beth
+    <Display>Beth</Display>
+    <First>Beth</First>
+  </Name>
+  <Position BoundaryRect="-217,96,-154,38">-180,70</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1970</Date>
+  </Birth>
+  <MedicalHistory>med00003, med00005</MedicalHistory>
+</Individual>
+<Individual ID="ind00004">
+  <Name>Mark
+    <Display>Mark</Display>
+    <First>Mark</First>
+  </Name>
+  <Position BoundaryRect="-342,96,-279,38">-305,70</Position>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1969</Date>
+  </Birth>
+  <MedicalHistory>med00001, med00002</MedicalHistory>
+</Individual>
+<Individual ID="ind00005">
+  <Name>John
+    <Display>John</Display>
+    <First>John</First>
+  </Name>
+  <Position BoundaryRect="-512,51,-449,-7">-475,25</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1">
+          <Top Left="#008000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1967</Date>
+  </Birth>
+  <MedicalHistory>med00010</MedicalHistory>
+</Individual>
+<Individual ID="ind00006">
+  <Name>Clark
+    <Display>Clark</Display>
+    <First>Clark</First>
+  </Name>
+  <Position BoundaryRect="-292,-104,-229,-162">-255,-130</Position>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1999</Date>
+  </Birth>
+  <MedicalHistory>med00010</MedicalHistory>
+</Individual>
+<Individual ID="ind00007">
+  <Name>Emily
+    <Display>Emily</Display>
+    <First>Emily</First>
+  </Name>
+  <Position BoundaryRect="-292,-9,-229,-67">-255,-35</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>2002</Date>
+  </Birth>
+  <MedicalHistory>med00010, med00006</MedicalHistory>
+</Individual>
+<Individual ID="ind00008">
+  <Name>Fred
+    <Display>Fred</Display>
+    <First>Fred</First>
+  </Name>
+  <Position BoundaryRect="-267,221,-204,163">-230,195</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1"/>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1941</Date>
+  </Birth>
+  <MedicalHistory>med00018</MedicalHistory>
+</Individual>
+<Individual ID="ind00009">
+  <Name>Mary
+    <Display>Mary</Display>
+    <First>Mary</First>
+  </Name>
+  <Position BoundaryRect="28,221,91,163">65,195</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1">
+          <Top Left="#C0C0C0"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1943</Date>
+  </Birth>
+  <MedicalHistory>med00017</MedicalHistory>
+</Individual>
+<Individual ID="ind00011">
+  <Name>Chris
+    <Display>Chris</Display>
+    <First>Chris</First>
+  </Name>
+  <Position BoundaryRect="-32,96,31,38">5,70</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="13">
+          <Bottom Left="#008000" Right="#C00000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1974</Date>
+  </Birth>
+  <MedicalHistory>med00013</MedicalHistory>
+</Individual>
+<Individual ID="ind00012">
+  <Name>Lauren
+    <Display>Lauren</Display>
+    <First>Lauren</First>
+  </Name>
+  <Position BoundaryRect="-442,51,-379,-7">-405,25</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1978</Date>
+  </Birth>
+  <MedicalHistory>med00010</MedicalHistory>
+</Individual>
+<Individual ID="ind00013">
+  <Name>Paula
+    <Display>Paula</Display>
+    <First>Paula</First>
+  </Name>
+  <Position BoundaryRect="133,96,196,38">170,70</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1978</Date>
+  </Birth>
+  <MedicalHistory>med00012</MedicalHistory>
+</Individual>
+<Individual ID="ind00014">
+  <Name>Dan
+    <Display>Dan</Display>
+    <First>Dan</First>
+  </Name>
+  <Pictures Primary="pic00002">pic00002</Pictures>
+  <Position BoundaryRect="108,-39,171,-97">145,-65</Position>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>2018</Date>
+  </Birth>
+  <MedicalHistory>med00010</MedicalHistory>
+</Individual>
+<Individual ID="ind00015">
+  <Name>Sophia
+    <Display>Sophia</Display>
+    <First>Sophia</First>
+  </Name>
+  <Pictures Primary="pic00003">pic00003</Pictures>
+  <Position BoundaryRect="-2,-39,61,-97">35,-65</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>2016</Date>
+  </Birth>
+  <MedicalHistory>med00011</MedicalHistory>
+</Individual>
+<Individual ID="ind00016">
+  <Name>Emma
+    <Display>Emma</Display>
+    <First>Emma</First>
+  </Name>
+  <Position BoundaryRect="288,-34,351,-92">325,-60</Position>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1992</Date>
+  </Birth>
+  <MedicalHistory>med00014</MedicalHistory>
+</Individual>
+<Individual ID="ind00017">
+  <Name>Frank
+    <Display>Frank</Display>
+    <First>Frank</First>
+  </Name>
+  <Position BoundaryRect="243,86,306,28">280,60</Position>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1968</Date>
+  </Birth>
+  <MedicalHistory>med00015</MedicalHistory>
+</Individual>
+<Individual ID="ind00018">
+  <Name>Amelia
+    <Display>Amelia</Display>
+    <First>Amelia</First>
+  </Name>
+  <Position BoundaryRect="358,86,421,28">395,60</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="2">
+          <Top Right="#FF00FF"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>F</Gender>
+  <Birth>
+    <Date>1968</Date>
+  </Birth>
+  <MedicalHistory>med00016</MedicalHistory>
+</Individual>
+<Individual ID="ind00019" IsLabel="Y">
+  <Position BoundaryRect="-326,-239,-274,-291">-300,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1">
+          <Top Left="#008000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00020" IsLabel="Y">
+  <Position BoundaryRect="-216,-239,-164,-291">-190,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="2">
+          <Top Left="#FF00FF" Right="#FF00FF"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00021" IsLabel="Y">
+  <Position BoundaryRect="-126,-239,-74,-291">-100,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1">
+          <Top Left="#FE0000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00022" IsLabel="Y">
+  <Position BoundaryRect="-11,-239,41,-291">15,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="8">
+          <Top Left="#C00000"/>
+          <Bottom Right="#C00000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00023" IsLabel="Y">
+  <Position BoundaryRect="194,-239,246,-291">220,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="4">
+          <Top Left="#800080"/>
+          <Bottom Left="#008000"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00024" IsLabel="Y">
+  <Position BoundaryRect="-426,-239,-374,-291">-400,-265</Position>
+  <Display>
+    <Colors>
+      <Gender>
+        <Fill Mask="1">
+          <Top Left="#939FBB"/>
+        </Fill>
+      </Gender>
+    </Colors>
+  </Display>
+  <Gender>M</Gender>
+</Individual>
+<Individual ID="ind00025" IsLabel="Y">
+  <Position BoundaryRect="-477,-279,-414,-331">-440,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00020</MedicalHistory>
+</Individual>
+<Individual ID="ind00026" IsLabel="Y">
+  <Position BoundaryRect="-322,-279,-259,-331">-285,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00021</MedicalHistory>
+</Individual>
+<Individual ID="ind00027" IsLabel="Y">
+  <Position BoundaryRect="-187,-279,-124,-331">-150,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00022</MedicalHistory>
+</Individual>
+<Individual ID="ind00028" IsLabel="Y">
+  <Position BoundaryRect="-22,-279,41,-331">15,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00023</MedicalHistory>
+</Individual>
+<Individual ID="ind00029" IsLabel="Y">
+  <Position BoundaryRect="123,-279,186,-331">160,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00024</MedicalHistory>
+</Individual>
+<Individual ID="ind00030" IsLabel="Y">
+  <Position BoundaryRect="258,-279,321,-331">295,-305</Position>
+  <Gender>M</Gender>
+  <MedicalHistory>med00025</MedicalHistory>
+</Individual>
+<Individual ID="ind00010">
+  <Name>Larry
+    <Display>Larry</Display>
+    <First>Larry</First>
+  </Name>
+  <Pictures Primary="pic00001">pic00001</Pictures>
+  <Position BoundaryRect="-117,96,-54,38">-80,70</Position>
+  <Gender>M</Gender>
+  <Birth>
+    <Date>1972</Date>
+  </Birth>
+  <MedicalHistory>med00019</MedicalHistory>
+</Individual>
+</Individuals>
+<Families>
+<Family ID="fam00001">
+  <Position>-180,-80
+    <Top>
+      <Left>-475,-80</Left>
+      <Right>-180,-80</Right>
+    </Top>
+  </Position>
+  <Relation>Divorce</Relation>
+</Family>
+<Family ID="fam00002">
+  <Position>-300,25
+    <Top>
+      <Left>-305,25</Left>
+      <Right>-180,25</Right>
+    </Top>
+  </Position>
+  <Relation>Marriage</Relation>
+</Family>
+<Family ID="fam00003">
+  <Position>-135,120
+    <Top>
+      <Left>-230,120</Left>
+      <Right>65,120</Right>
+    </Top>
+  </Position>
+  <Relation>Marriage</Relation>
+</Family>
+<Family ID="fam00004">
+  <Position>-415,-50
+    <Top>
+      <Left>-475,-50</Left>
+      <Right>-405,-50</Right>
+    </Top>
+  </Position>
+  <Relation>Marriage</Relation>
+</Family>
+<Family ID="fam00005">
+  <Position>75,10
+    <Top>
+      <Left>5,10</Left>
+      <Right>170,10</Right>
+    </Top>
+  </Position>
+  <Relation>Marriage</Relation>
+</Family>
+<Family ID="fam00006">
+  <Position>360,-10
+    <Top>
+      <Left>280,-10</Left>
+      <Right>395,-10</Right>
+    </Top>
+  </Position>
+</Family>
+</Families>
+<PedigreeLinks>
+<PedigreeLink PedigreeLink="Parent" Family="fam00001" Individual="ind00003"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00001" Individual="ind00005"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00001" Individual="ind00006"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00002" Individual="ind00004"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00002" Individual="ind00003"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00002" Individual="ind00007"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00003" Individual="ind00008"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00003" Individual="ind00009"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00003" Individual="ind00003"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00003" Individual="ind00011"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00004" Individual="ind00005"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00004" Individual="ind00012"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00005" Individual="ind00011"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00005" Individual="ind00013"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00005" Individual="ind00014"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00005" Individual="ind00015"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00006" Individual="ind00016"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00006" Individual="ind00017"/>
+<PedigreeLink PedigreeLink="Parent" Family="fam00006" Individual="ind00018"/>
+<PedigreeLink PedigreeLink="Biological" Family="fam00003" Individual="ind00010"/>
+</PedigreeLinks>
+<Pictures>
+<Picture ID="pic00001">
+  <Path Relative="Larry.jpg" FileUnique="Larry.jpg" Report="pictures/Larry.jpg">C:\Program Files (x86)\GenoPro\SampleFiles\Larry.jpg</Path>
+  <Name>Larry</Name>
+  <Cache FileSize="3526" Dimension="100x150" Megapixels="0.01" BPP="24" DPI="*96"/>
+</Picture>
+<Picture ID="pic00002">
+  <Path Relative="Dan.jpg" FileUnique="Dan.jpg" Report="pictures/Dan.jpg">C:\Program Files (x86)\GenoPro\SampleFiles\Dan.jpg</Path>
+  <Name>Dan</Name>
+  <Cache FileSize="2474" Dimension="85x103" Megapixels="0.00" BPP="24" DPI="*96"/>
+</Picture>
+<Picture ID="pic00003">
+  <Path Relative="Sophia.jpg" FileUnique="Sophia.jpg" Report="pictures/Sophia.jpg">C:\Program Files (x86)\GenoPro\SampleFiles\Sophia.jpg</Path>
+  <Name>Sophia</Name>
+  <Cache FileSize="4102" Dimension="123x120" Megapixels="0.01" BPP="24" DPI="*96"/>
+</Picture>
+<Picture ID="pic00004">
+  <Path Relative="lab-test-result-positive-COVID19.png" FileUnique="lab-test-result-positive-COVID19.png" Report="pictures/lab-test-result-positive-COVID19.png">C:\Program Files (x86)\GenoPro\SampleFiles\lab-test-result-positive-COVID19.png</Path>
+  <Name>lab-test-result-positive-COVID19</Name>
+  <Cache FileSize="3782" Dimension="559x258" Megapixels="0.14" BPP="24" DPI="*96"/>
+  <Date>9 Feb 2020</Date>
+  <Place>place00001</Place>
+  <Source>source00001</Source>
+</Picture>
+<Picture ID="pic00005">
+  <Path Relative="lab-test-result-negative-COVID19.png" FileUnique="lab-test-result-negative-COVID19.png" Report="pictures/lab-test-result-negative-COVID19.png">C:\Program Files (x86)\GenoPro\SampleFiles\lab-test-result-negative-COVID19.png</Path>
+  <Name>lab-test-result-negative-COVID19</Name>
+  <Cache FileSize="3874" Dimension="577x251" Megapixels="0.14" BPP="24" DPI="*96"/>
+</Picture>
+<Picture ID="pic00006">
+  <Path Relative="x-ray.jpg" FileUnique="x-ray.jpg" Report="pictures/x-ray.jpg">C:\Program Files (x86)\GenoPro\SampleFiles\x-ray.jpg</Path>
+  <Name>x-ray</Name>
+  <Description>Severe lung congestion, close to pneumonia</Description>
+  <Cache FileSize="10179" Dimension="500x371" Megapixels="0.18" BPP="24" DPI="*96"/>
+  <Date>12 Feb 2020</Date>
+  <Place>place00001</Place>
+  <Source>source00001</Source>
+</Picture>
+</Pictures>
+<Places>
+<Place ID="place00001">
+  <Name>Florida</Name>
+</Place>
+</Places>
+<MedicalHistory>
+<Medical ID="med00001">
+  <Pictures Primary="pic00004">pic00004, pic00006</Pictures>
+  <Symptom>Dificulty Breathing, cough</Symptom>
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <Diagnosis>COVID-19</Diagnosis>
+  <DateTest>6 Feb 2020</DateTest>
+  <DateResult>9 Feb 2020</DateResult>
+  <Place>place00001</Place>
+  <Source>source00001</Source>
+  <Pressure>117/75</Pressure>
+  <Pulse>85</Pulse>
+  <Temperature>101.1 oral</Temperature>
+  <Weight>165</Weight>
+  <DrName>Dr. Smith</DrName>
+  <telNumber>(305) 867-5309</telNumber>
+</Medical>
+<Medical ID="med00003">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>10 Feb 2020</DateTest>
+  <DateResult>13 Feb 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00010">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>20 Feb 2020</DateTest>
+  <DateResult>23 Feb 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00002">
+  <Pictures Primary="pic00005">pic00005</Pictures>
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositiveRecovered</Result>
+  <DateTest>25 Feb 2020</DateTest>
+  <DateResult>27 Feb 2020</DateResult>
+  <Place>place00001</Place>
+  <Source>source00001</Source>
+  <Pressure>119/72</Pressure>
+  <Pulse>79</Pulse>
+  <Temperature>97.3 oral</Temperature>
+  <Weight>165</Weight>
+  <Comment>Feels healthy again, no longer dificulty breathing</Comment>
+</Medical>
+<Medical ID="med00011">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedNegative</Result>
+  <DateTest>25 Feb 2020</DateTest>
+  <DateResult>27 Feb 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00012">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>28 Feb 2020</DateTest>
+  <DateResult>2 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00013">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>1 Mar 2020</DateTest>
+  <DateResult>3 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00005">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositiveRecovered</Result>
+  <DateTest>2 Mar 2020</DateTest>
+  <DateResult>5 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00006">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositiveRecovered</Result>
+  <DateTest>4 Mar 2020</DateTest>
+  <DateResult>6 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00017">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedNegative</Result>
+  <DateTest>4 Mar 2020</DateTest>
+  <DateResult>6 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00018">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedNegative</Result>
+  <DateTest>4 Mar 2020</DateTest>
+  <DateResult>7 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00014">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>15 Mar 2020</DateTest>
+  <DateResult>18 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00015">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedPositive</Result>
+  <DateTest>18 Mar 2020</DateTest>
+  <DateResult>20 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00016">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedNegative</Result>
+  <DateTest>18 Mar 2020</DateTest>
+  <DateResult>20 Mar 2020</DateResult>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00019">
+  <DiseaseType>SARS-CoV-2</DiseaseType>
+  <Result>TestedAwatingResults</Result>
+  <DateTest>20 Mar 2020</DateTest>
+  <Place>place00001</Place>
+</Medical>
+<Medical ID="med00020">
+  <Result>TestedAwatingResults</Result>
+</Medical>
+<Medical ID="med00021">
+  <Result>TestedPositive</Result>
+</Medical>
+<Medical ID="med00022">
+  <Result>TestedPositiveRecovered</Result>
+</Medical>
+<Medical ID="med00023">
+  <Result>TestedNegative</Result>
+</Medical>
+<Medical ID="med00024">
+  <Result>Inconclusive</Result>
+</Medical>
+<Medical ID="med00025">
+  <Result>Other</Result>
+</Medical>
+</MedicalHistory>
+<SourcesAndCitations>
+<SourceCitation ID="source00001">
+  <Title>Florida Emergency Test Lab</Title>
+</SourceCitation>
+</SourcesAndCitations>
+<EmotionalRelationships>
+<EmotionalRelationship EmotionalLink="Fan" Entity1="ind00015" Entity2="ind00007">
+  <Position>
+    <Points>0,-80</Points>
+  </Position>
+</EmotionalRelationship>
+</EmotionalRelationships>
+<Labels>
+<Label>
+  <Position z="40" Size="X" Width="855" Height="135">-475,-200</Position>
+  <Text Padding="10">Colors Denoting Addictions and Medical Conditions
+    <Alignment Vertical="Top"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFE0" Border="#000000"/>
+    <Border Width="T"/>
+  </Display>
+</Label>
+<Label>
+  <Position Width="80" Height="30">-285,-250</Position>
+  <Text Padding="0">Obesity
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Medical condition in which excess body fat has accumulated to the extent that it may have an adverse effect on health</Comment>
+</Label>
+<Label>
+  <Position Width="60" Height="30">-175,-250</Position>
+  <Text Padding="0">Cancer
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Disease characterized by out-of-control cell growth forming lumps or masses of tissue called tumors</Comment>
+</Label>
+<Label>
+  <Position Width="65" Height="30">-85,-250</Position>
+  <Text Padding="0">Heart Disease
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Heart disease is a broad term used to describe a range of diseases that affect the heart, and in some cases, the blood vessels</Comment>
+</Label>
+<Label>
+  <Position Width="150" Height="30">30,-250</Position>
+  <Text Padding="0">Hypertension / High Blood Pressure
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Medical condition in which the blood pressure in vessels during a heart beat is elevated</Comment>
+</Label>
+<Label>
+  <Position Width="100" Height="30">235,-250</Position>
+  <Text Padding="0">Diabetes
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Metabolic disease in which a person has high blood sugar, often because the body does not produce enough insulin</Comment>
+</Label>
+<Label>
+  <Position Width="70" Height="30">-385,-250</Position>
+  <Text Padding="0">Arthritis
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="Transparent" Border="Transparent"/>
+  </Display>
+  <Comment>Medical conditions involving damage to the joints of the body resulting in pain, poor sleep and sometimes the inability to walk</Comment>
+</Label>
+<Label>
+  <Position z="165" Width="110" Height="30">-425,-295</Position>
+  <Text Padding="0">Tested and Awaiting results
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Position z="165" Width="125" Height="30">-135,-295</Position>
+  <Text Padding="0">Tested Positive and recovered
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Position z="165" Width="90" Height="20">-270,-295</Position>
+  <Text Padding="0">Tested Positive
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Position z="165" Width="90" Height="30">35,-290</Position>
+  <Text Padding="0">Tested Negative
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Position z="165" Width="88" Height="30">177,-295</Position>
+  <Text Padding="0">Tested Inconclusive
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Position z="165" Width="63" Height="20">312,-295</Position>
+  <Text Padding="0">Other
+    <DrawOutline>Y</DrawOutline>
+    <Alignment Horizontal="Left"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+</Label>
+<Label>
+  <Pictures Primary="pic00002">pic00002</Pictures>
+  <Position z="165" Width="40" Height="40">100,5</Position>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+  <Text Padding="0">
+    <DrawOutline>Y</DrawOutline>
+  </Text>
+</Label>
+<Label>
+  <Pictures Primary="pic00003">pic00003</Pictures>
+  <Position z="165" Width="45" Height="40">40,5</Position>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+  <Text Padding="0">
+    <DrawOutline>Y</DrawOutline>
+  </Text>
+</Label>
+<Label>
+  <Pictures Primary="pic00001">pic00001</Pictures>
+  <Position z="165" Width="70" Height="60">-115,40</Position>
+  <Display>
+    <Color Text="#000000" Fill="#FFFFFF" Border="Transparent"/>
+  </Display>
+  <Text Padding="0">
+    <DrawOutline>Y</DrawOutline>
+  </Text>
+</Label>
+</Labels>
+<Households>
+<Household>
+  <Objects>ind00003, ind00004, ind00006, ind00007</Objects>
+  <Position>
+    <Points>-342,96, -154,96, -154,38, -229,-162, -292,-162, -342,38, -342,96</Points>
+  </Position>
+  <Display Pattern=".">
+    <Color Line="#008000" Fill="Transparent"/>
+  </Display>
+</Household>
+<Household>
+  <Objects>ind00008, ind00009</Objects>
+  <Position>
+    <Points>-267,221, 91,221, 91,163, -267,163, -267,221</Points>
+  </Position>
+  <Display Pattern=".">
+    <Color Line="#008000" Fill="Transparent"/>
+  </Display>
+</Household>
+<Household>
+  <Objects>ind00005, ind00012</Objects>
+  <Position>
+    <Points>-512,51, -379,51, -379,-7, -512,-7, -512,51</Points>
+  </Position>
+  <Display Pattern=".">
+    <Color Line="#008000" Fill="Transparent"/>
+  </Display>
+</Household>
+<Household>
+  <Objects>ind00011, ind00013, ind00014, ind00015</Objects>
+  <Position>
+    <Points>-32,96, 196,96, 196,38, 171,-97, -2,-97, -32,38, -32,96</Points>
+  </Position>
+  <Display Pattern=".">
+    <Color Line="#008000" Fill="Transparent"/>
+  </Display>
+</Household>
+<Household>
+  <Objects>ind00016, ind00017, ind00018</Objects>
+  <Position>
+    <Points>243,86, 421,86, 421,28, 351,-92, 288,-92, 243,28, 243,86</Points>
+  </Position>
+  <Display Pattern=".">
+    <Color Line="#008000" Fill="Transparent"/>
+  </Display>
+</Household>
+</Households>
+<SocialEntities>
+<SocialEntity ID="entity00001">
+  <Position Width="160" Height="40">235,-140</Position>
+  <Text Padding="10">Call Center
+    <Alignment Vertical="Top"/>
+  </Text>
+  <Display>
+    <Color Text="#FFFFFF" Fill="#008000" Border="#003C00"/>
+    <Border Pattern="_"/>
+  </Display>
+</SocialEntity>
+<SocialEntity ID="entity00002">
+  <Position Width="160" Height="40">-515,205</Position>
+  <Text Padding="10">International Corporation
+    <Alignment Vertical="Top"/>
+  </Text>
+  <Display>
+    <Color Text="#000000" Fill="#01D69B" Border="#007958"/>
+  </Display>
+</SocialEntity>
+</SocialEntities>
+<SocialRelationships>
+<SocialRelationship Connection="Manager" Entity1="ind00013" Entity2="entity00001">
+  <Position z="85"/>
+  <Display>
+    <Color Line="#004000"/>
+    <Arrow End="Y"/>
+  </Display>
+  <Comment>Works</Comment>
+</SocialRelationship>
+<SocialRelationship Connection="Employee" Entity1="ind00016" Entity2="entity00001">
+  <Position z="85"/>
+  <Display>
+    <Color Line="#003C00"/>
+    <Arrow End="Y"/>
+  </Display>
+</SocialRelationship>
+<SocialRelationship Connection="Representative" Entity1="ind00004" Entity2="entity00002">
+  <Position z="85"/>
+  <Display Pattern="-">
+    <Color Line="#007958"/>
+    <Arrow End="Y"/>
+  </Display>
+</SocialRelationship>
+</SocialRelationships>
+</GenoPro>

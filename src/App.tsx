@@ -20,14 +20,14 @@ import { GenogramEdge } from './components/Edges';
 import { GoogleGenAI } from "@google/genai";
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { 
-  Plus, 
-  Users, 
-  UserPlus, 
-  Trash2, 
-  Download, 
-  Settings, 
-  LayoutGrid, 
+import {
+  Plus,
+  Users,
+  UserPlus,
+  Trash2,
+  Download,
+  Settings,
+  LayoutGrid,
   Table as TableIcon,
   Search,
   ChevronRight,
@@ -64,7 +64,18 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  
+  const [isLinkWizardOpen, setIsLinkWizardOpen] = useState(false);
+
+  // Link Wizard State
+  const [linkSourceId, setLinkSourceId] = useState("");
+  const [linkTargetId, setLinkTargetId] = useState("");
+  const [linkType, setLinkType] = useState<RelationType>(RelationType.BLOOD);
+
+  // Family Wizard State
+  const [wizardFather, setWizardFather] = useState("");
+  const [wizardMother, setWizardMother] = useState("");
+  const [wizardChildren, setWizardChildren] = useState<{ name: string, gender: Gender }[]>([]);
+
   // Municipality Context State
   const [caseNumber, setCaseNumber] = useState("EXP-2024-8921");
   const [neighborhood, setNeighborhood] = useState("Centro - Casco Antiguo");
@@ -140,7 +151,27 @@ export default function App() {
 
   React.useEffect(() => {
     fetchLogs();
-  }, [caseNumber]);
+
+    // Load initial data from Supabase if available
+    const loadTree = async () => {
+      try {
+        const response = await fetch(`/api/trees/${caseNumber}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.data) {
+            setNodes(data.data.nodes || []);
+            setEdges(data.data.edges || []);
+            setIndividuals(data.data.individuals || []);
+            setFamilies(data.data.families || []);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading tree data:", error);
+      }
+    };
+
+    loadTree();
+  }, [caseNumber, setNodes, setEdges]);
 
   const generateReport = () => {
     setIsReportOpen(true);
@@ -173,7 +204,7 @@ export default function App() {
         model: "gemini-3-flash-preview",
         contents: prompt,
       });
-      
+
       setAiDiagnosis(response.text || "No se pudo generar el diagnóstico.");
     } catch (error) {
       console.error("AI Error:", error);
@@ -196,7 +227,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 1 BIRT
 2 DATE ${i.birthDate || 'UNKNOWN'}`).join('\n')}
 0 TRLR`;
-    
+
     const blob = new Blob([gedcomContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -230,15 +261,15 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
       firstName: gender === Gender.MALE ? 'Nuevo Hombre' : 'Nueva Mujer',
       gender
     });
-    
+
     logAction("Creación", `Añadido nuevo individuo: ${newPerson.firstName}`);
 
     const newNode: Node = {
       id: newPerson.id,
       type: 'individual',
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { 
-        label: `${newPerson.firstName}`, 
+      position: { x: Math.random() * 400 + 100, y: Math.random() * 400 + 100 },
+      data: {
+        label: `${newPerson.firstName}`,
         gender: newPerson.gender,
         riskLevel: newPerson.riskLevel,
         isDeceased: newPerson.isDeceased
@@ -247,6 +278,8 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
     setIndividuals(prev => [...prev, newPerson]);
     setNodes(nds => [...nds, newNode]);
+
+    return newPerson;
   };
 
   const deleteSelected = () => {
@@ -277,7 +310,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
+
       if (e.key.toLowerCase() === 'w') addPerson(Gender.MALE);
       if (e.key.toLowerCase() === 'e') addPerson(Gender.FEMALE);
       if (e.key.toLowerCase() === 'f') setIsWizardOpen(true);
@@ -328,8 +361,8 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Herramientas</div>
-          
-          <button 
+
+          <button
             onClick={() => addPerson(Gender.MALE)}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors group"
           >
@@ -339,7 +372,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
             Nuevo Hombre (W)
           </button>
 
-          <button 
+          <button
             onClick={() => addPerson(Gender.FEMALE)}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors group"
           >
@@ -349,7 +382,17 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
             Nueva Mujer (E)
           </button>
 
-          <button 
+          <button
+            onClick={() => setIsLinkWizardOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors group"
+          >
+            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-md group-hover:bg-emerald-100 transition-colors">
+              <Users size={16} />
+            </div>
+            Nuevo Vínculo Manual
+          </button>
+
+          <button
             onClick={() => setIsWizardOpen(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors group"
           >
@@ -359,7 +402,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
             Asistente Familiar (F)
           </button>
 
-          <button 
+          <button
             onClick={() => setIsLogsOpen(true)}
             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors group"
           >
@@ -371,14 +414,14 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
           <div className="pt-6">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Vistas</div>
-            <button 
+            <button
               onClick={() => setViewMode('visual')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${viewMode === 'visual' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
             >
               <LayoutGrid size={18} />
               Árbol Visual
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('table')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${viewMode === 'table' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
             >
@@ -389,7 +432,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <button 
+          <button
             onClick={deleteSelected}
             disabled={!selectedId}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-semibold transition-all"
@@ -407,13 +450,13 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Buscar individuo..." 
+              <input
+                type="text"
+                placeholder="Buscar individuo..."
                 className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-indigo-500 transition-all"
               />
             </div>
-            <button 
+            <button
               onClick={() => setIsPrivacyMode(!isPrivacyMode)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${isPrivacyMode ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}
             >
@@ -423,14 +466,14 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={exportGedcom}
               title="Exportar GEDCOM"
               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
             >
               <Download size={20} />
             </button>
-            <button 
+            <button
               onClick={generateReport}
               className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all text-sm font-medium"
             >
@@ -438,7 +481,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               <span className="hidden sm:inline">Informe Social</span>
             </button>
             <div className="h-8 w-[1px] bg-slate-100 mx-2" />
-            <button 
+            <button
               onClick={saveTree}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
             >
@@ -467,7 +510,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
             >
               <Background color="#E2E8F0" gap={20} />
               <Controls className="!bg-white !border-slate-200 !shadow-sm" />
-              <MiniMap 
+              <MiniMap
                 nodeStrokeColor={(n) => {
                   if (n.type === 'individual') return '#6366f1';
                   return '#1e293b';
@@ -484,7 +527,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                     <Settings size={14} className="text-indigo-600" />
                     Propiedades
                   </div>
-                  <button 
+                  <button
                     onClick={runAiDiagnosis}
                     disabled={isAnalyzing}
                     className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all disabled:opacity-50"
@@ -493,7 +536,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                     {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                   </button>
                 </h3>
-                
+
                 {aiDiagnosis && (
                   <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center justify-between mb-2">
@@ -518,23 +561,23 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Datos Personales</h4>
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={individuals.find(i => i.id === selectedId)?.firstName || ''}
                           onChange={(e) => {
                             const val = e.target.value;
                             setIndividuals(prev => prev.map(i => i.id === selectedId ? { ...i, firstName: val } : i));
                             setNodes(nds => nds.map(n => n.id === selectedId ? { ...n, data: { ...n.data, label: val } } : n));
                           }}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">DNI / NIE</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="12345678X"
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                         />
                       </div>
                     </div>
@@ -545,10 +588,10 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                         <AlertTriangle size={10} />
                         Valoración Social
                       </h4>
-                      
+
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Nivel de Riesgo</label>
-                        <select 
+                        <select
                           value={individuals.find(i => i.id === selectedId)?.riskLevel || RiskLevel.NONE}
                           onChange={(e) => {
                             const val = e.target.value as RiskLevel;
@@ -565,8 +608,8 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           id="isDeceased"
                           checked={individuals.find(i => i.id === selectedId)?.isDeceased || false}
                           onChange={(e) => {
@@ -653,7 +696,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                     {/* Notes */}
                     <div className="space-y-2 pt-2 border-t border-slate-100">
                       <label className="block text-xs font-medium text-slate-600">Notas de Intervención</label>
-                      <textarea 
+                      <textarea
                         rows={4}
                         placeholder="Observaciones del trabajador social..."
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
@@ -665,7 +708,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo de Relación</h4>
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">Vínculo Familiar / Social</label>
-                      <select 
+                      <select
                         value={edges.find(e => e.id === selectedEdgeId)?.data?.relationType as string || RelationType.BLOOD}
                         onChange={(e) => {
                           const val = e.target.value as RelationType;
@@ -751,30 +794,34 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                 <Users className="text-indigo-600" size={24} />
                 Asistente Familiar
               </h2>
-              <button 
+              <button
                 onClick={() => setIsWizardOpen(false)}
                 className="p-2 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <Plus size={20} className="rotate-45 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
                   <label className="block text-[10px] font-bold text-blue-600 uppercase mb-2">Padre</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
+                    value={wizardFather}
+                    onChange={(e) => setWizardFather(e.target.value)}
                     placeholder="Nombre del padre"
-                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" 
+                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-700"
                   />
                 </div>
-                <div className="p-4 bg-pink-50 rounded-xl border border-pink-100">
+                <div className="p-4 bg-pink-50/50 rounded-xl border border-pink-100">
                   <label className="block text-[10px] font-bold text-pink-600 uppercase mb-2">Madre</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
+                    value={wizardMother}
+                    onChange={(e) => setWizardMother(e.target.value)}
                     placeholder="Nombre de la madre"
-                    className="w-full px-3 py-2 bg-white border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-500" 
+                    className="w-full px-3 py-2 bg-white border border-pink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-500 text-slate-700"
                   />
                 </div>
               </div>
@@ -782,40 +829,229 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Hijos</label>
-                  <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                  <button
+                    onClick={() => setWizardChildren([...wizardChildren, { name: '', gender: Gender.MALE }])}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                  >
                     <Plus size={14} />
                     Añadir Hijo
                   </button>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <input type="text" placeholder="Nombre del hijo/a" className="flex-1 bg-transparent border-none text-sm outline-none" />
-                    <select className="bg-white border border-slate-200 rounded px-2 py-1 text-xs">
-                      <option>Hijo</option>
-                      <option>Hija</option>
-                    </select>
-                  </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {wizardChildren.map((child, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200 shadow-sm relative pr-8">
+                      <input
+                        type="text"
+                        value={child.name}
+                        onChange={(e) => {
+                          const newChildren = [...wizardChildren];
+                          newChildren[idx].name = e.target.value;
+                          setWizardChildren(newChildren);
+                        }}
+                        placeholder="Nombre del hijo/a"
+                        className="flex-1 bg-transparent border-none text-sm outline-none text-slate-700"
+                      />
+                      <select
+                        value={child.gender}
+                        onChange={(e) => {
+                          const newChildren = [...wizardChildren];
+                          newChildren[idx].gender = e.target.value as Gender;
+                          setWizardChildren(newChildren);
+                        }}
+                        className="bg-white border border-slate-200 rounded px-2 py-1 text-xs outline-none text-slate-600"
+                      >
+                        <option value={Gender.MALE}>Hombre</option>
+                        <option value={Gender.FEMALE}>Mujer</option>
+                        <option value={Gender.OTHER}>Desconocido</option>
+                      </select>
+                      <button
+                        onClick={() => setWizardChildren(wizardChildren.filter((_, i) => i !== idx))}
+                        className="absolute right-3 text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  {wizardChildren.length === 0 && (
+                    <p className="text-[11px] text-slate-400 italic">No se han añadido hijos a este núcleo orgánico.</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button 
-                onClick={() => setIsWizardOpen(false)}
+            <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setWizardFather("");
+                  setWizardMother("");
+                  setWizardChildren([]);
+                  setIsWizardOpen(false);
+                }}
                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={() => {
-                  // Mock creation for now
-                  addPerson(Gender.MALE);
-                  addPerson(Gender.FEMALE);
+                  let fatherId = null;
+                  let motherId = null;
+
+                  if (wizardFather.trim()) {
+                    const p = addPerson(Gender.MALE);
+                    setIndividuals(prev => {
+                      const updated = [...prev];
+                      const target = updated.find(i => i.id === p.id);
+                      if (target) target.firstName = wizardFather;
+                      return updated;
+                    });
+                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: wizardFather } } : n));
+                    fatherId = p.id;
+                  }
+
+                  if (wizardMother.trim()) {
+                    const p = addPerson(Gender.FEMALE);
+                    setIndividuals(prev => {
+                      const updated = [...prev];
+                      const target = updated.find(i => i.id === p.id);
+                      if (target) target.firstName = wizardMother;
+                      return updated;
+                    });
+                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: wizardMother } } : n));
+                    motherId = p.id;
+                  }
+
+                  if (fatherId && motherId) {
+                    const edgeId = `e-${fatherId}-${motherId}-${Date.now()}`;
+                    setEdges(eds => addEdge({ id: edgeId, source: fatherId, target: motherId, type: 'genogram', data: { relationType: RelationType.MARRIAGE } }, eds));
+                  }
+
+                  wizardChildren.forEach(child => {
+                    if (child.name.trim()) {
+                      const p = addPerson(child.gender);
+                      setIndividuals(prev => {
+                        const updated = [...prev];
+                        const target = updated.find(i => i.id === p.id);
+                        if (target) target.firstName = child.name;
+                        return updated;
+                      });
+                      setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: child.name } } : n));
+
+                      const parentSource = fatherId || motherId;
+                      if (parentSource) {
+                        const edgeId = `e-${parentSource}-${p.id}-${Date.now()}`;
+                        setEdges(eds => addEdge({ id: edgeId, source: parentSource, target: p.id, type: 'genogram', data: { relationType: RelationType.BLOOD } }, eds));
+                      }
+                    }
+                  });
+
+                  logAction("Creación", "Familia generada a través del asistente (padres e hijos).");
+                  setWizardFather("");
+                  setWizardMother("");
+                  setWizardChildren([]);
                   setIsWizardOpen(false);
                 }}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
+                className="px-6 py-2 bg-[#5B4DF0] text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-all"
               >
                 Crear Familia
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Link Wizard Modal */}
+      {isLinkWizardOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                <div className="text-emerald-500">
+                  <UserPlus size={24} />
+                </div>
+                Vínculo Manual
+              </h2>
+              <button
+                onClick={() => setIsLinkWizardOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <Plus size={20} className="rotate-45 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Persona Origen</label>
+                <select
+                  value={linkSourceId}
+                  onChange={(e) => setLinkSourceId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 text-slate-600"
+                >
+                  <option value="" disabled>Selecciona una persona...</option>
+                  {individuals.map(i => <option key={i.id} value={i.id}>{i.firstName} {i.lastName || ''}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Persona Destino</label>
+                <select
+                  value={linkTargetId}
+                  onChange={(e) => setLinkTargetId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 text-slate-600"
+                >
+                  <option value="" disabled>Selecciona una persona...</option>
+                  {individuals.map(i => <option key={i.id} value={i.id}>{i.firstName} {i.lastName || ''}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Tipo de Relación</label>
+                <select
+                  value={linkType}
+                  onChange={(e) => setLinkType(e.target.value as RelationType)}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 text-slate-600"
+                >
+                  <option value={RelationType.BLOOD}>Consanguinidad (Hijo/a)</option>
+                  <option value={RelationType.MARRIAGE}>Matrimonio / Pareja de Hecho</option>
+                  <option value={RelationType.COHABITATION}>Convivencia</option>
+                  <option value={RelationType.CONFLICT}>Relación Conflictiva</option>
+                  <option value={RelationType.CLOSE}>Relación Muy Estrecha</option>
+                  <option value={RelationType.DISTANT}>Relación Distante</option>
+                  <option value={RelationType.DIVORCE}>Divorcio / Ruptura</option>
+                  <option value={RelationType.SEPARATION}>Separación</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setIsLinkWizardOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (linkSourceId && linkTargetId && linkSourceId !== linkTargetId) {
+                    const newEdge = {
+                      id: `e-${linkSourceId}-${linkTargetId}-${Date.now()}`,
+                      source: linkSourceId,
+                      target: linkTargetId,
+                      type: 'genogram',
+                      data: { relationType: linkType }
+                    };
+                    setEdges((eds) => addEdge(newEdge, eds));
+                    logAction("Vínculo", "Se ha creado un nuevo vínculo manual entre dos individuos.");
+                    setLinkSourceId("");
+                    setLinkTargetId("");
+                    setLinkType(RelationType.BLOOD);
+                    setIsLinkWizardOpen(false);
+                  } else {
+                    alert("Asegúrate de seleccionar dos personas distintas para crear un vínculo.");
+                  }
+                }}
+                className="px-6 py-2 bg-[#75D2AC] text-white rounded-lg text-sm font-bold hover:bg-[#62BFA1] transition-all"
+              >
+                Establecer Vínculo
               </button>
             </div>
           </div>
@@ -831,14 +1067,14 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                 <FileText className="text-indigo-600" size={24} />
                 Historial de Auditoría
               </h2>
-              <button 
+              <button
                 onClick={() => setIsLogsOpen(false)}
                 className="p-2 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <Plus size={20} className="rotate-45 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="p-0 max-h-[60vh] overflow-y-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-slate-50 z-10">
@@ -860,8 +1096,8 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                         <span className={cn(
                           "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
                           log.action === 'Guardado' ? "bg-emerald-50 text-emerald-600" :
-                          log.action === 'Eliminación' ? "bg-red-50 text-red-600" :
-                          log.action === 'IA Diagnosis' ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-600"
+                            log.action === 'Eliminación' ? "bg-red-50 text-red-600" :
+                              log.action === 'IA Diagnosis' ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-600"
                         )}>
                           {log.action}
                         </span>
@@ -879,7 +1115,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
-              <button 
+              <button
                 onClick={() => setIsLogsOpen(false)}
                 className="px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 transition-all"
               >
@@ -899,14 +1135,14 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                 <h2 className="text-2xl font-bold text-slate-800">Informe de Valoración Social</h2>
                 <p className="text-sm text-slate-500 mt-1">Generado automáticamente para el expediente {caseNumber}</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsReportOpen(false)}
                 className="p-2 hover:bg-white rounded-full transition-colors shadow-sm"
               >
                 <Plus size={24} className="rotate-45 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
               {/* Summary Stats */}
               <div className="grid grid-cols-3 gap-4">
@@ -950,7 +1186,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               <div className="space-y-4">
                 <h3 className="font-bold text-slate-800 border-b pb-2">Dinámica Familiar</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  El núcleo familiar presenta un total de {individuals.length} miembros. 
+                  El núcleo familiar presenta un total de {individuals.length} miembros.
                   Se observa una estructura de {families.length} unidades familiares interconectadas.
                   {individuals.some(i => i.isDeceased) && " Se han identificado miembros fallecidos que podrían tener impacto en el duelo familiar."}
                 </p>
@@ -962,13 +1198,13 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                 Este informe es confidencial y para uso exclusivo de los Servicios Sociales.
               </div>
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setIsReportOpen(false)}
                   className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
                 >
                   Cerrar
                 </button>
-                <button 
+                <button
                   className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2"
                 >
                   <Download size={16} />

@@ -9,9 +9,9 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-type IndividualNodeData = Node<{ 
-  label: string; 
-  gender: Gender; 
+type IndividualNodeData = Node<{
+  label: string;
+  gender: Gender;
   riskLevel?: RiskLevel;
   isDeceased?: boolean;
   isPrivacyMode?: boolean;
@@ -45,46 +45,48 @@ export const IndividualNode = ({ data, selected }: NodeProps<IndividualNodeData>
 
   return (
     <div className={cn(
-      "relative px-4 py-3 shadow-md rounded-lg bg-white border-2 transition-all min-w-[140px]",
+      "relative px-4 py-3 shadow-sm rounded-lg bg-white border-2 transition-all min-w-[200px] flex items-center justify-between",
       riskBorderColor,
-      selected && "ring-2 ring-offset-2 ring-indigo-500",
-      isDeceased && "opacity-90"
+      selected && "ring-4 ring-indigo-500/20",
+      isDeceased && "opacity-60"
     )}>
-      <Handle type="target" position={Position.Top} className="w-2.5 h-2.5 !bg-slate-400 border-2 border-white" />
-      
+      <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-slate-300 border-none" />
+
       {/* Deceased Cross Overlay */}
       {isDeceased && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <svg viewBox="0 0 100 100" className="w-full h-full opacity-30">
+          <svg viewBox="0 0 100 100" className="w-full h-full opacity-20">
             <line x1="0" y1="0" x2="100" y2="100" stroke="black" strokeWidth="2" />
             <line x1="100" y1="0" x2="0" y2="100" stroke="black" strokeWidth="2" />
           </svg>
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 w-full">
+        {/* Avatar */}
         <div className={cn(
-          "p-2 rounded-full relative",
-          isMale ? "bg-blue-100 text-blue-600" : isFemale ? "bg-pink-100 text-pink-600" : "bg-gray-100 text-gray-600"
+          "w-10 h-10 rounded-full flex items-center justify-center relative flex-shrink-0",
+          isMale ? "bg-blue-50 text-blue-500" : isFemale ? "bg-pink-50 text-pink-500" : "bg-gray-50 text-gray-500"
         )}>
-          {isMale ? <User size={18} /> : isFemale ? <UserRound size={18} /> : <Baby size={18} />}
-          
+          {isMale ? <User size={20} className={isMale ? "text-blue-500" : ""} /> : isFemale ? <UserRound size={20} className={isFemale ? "text-pink-500" : ""} /> : <Baby size={20} />}
+
           {riskLevel !== RiskLevel.NONE && (
             <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
               <AlertTriangle size={12} className={cn(
-                riskLevel === RiskLevel.HIGH ? "text-red-600 fill-red-600" : 
-                riskLevel === RiskLevel.MEDIUM ? "text-orange-500 fill-orange-500" : "text-yellow-500 fill-yellow-500"
+                riskLevel === RiskLevel.HIGH ? "text-red-600 fill-red-600" :
+                  riskLevel === RiskLevel.MEDIUM ? "text-orange-500 fill-orange-500" : "text-yellow-500 fill-yellow-500"
               )} />
             </div>
           )}
         </div>
-        
-        <div className="flex flex-col">
-          <div className="text-sm font-bold text-slate-800 leading-tight">
+
+        {/* Info */}
+        <div className="flex flex-col flex-1">
+          <div className="text-[15px] font-bold text-slate-800 leading-tight">
             {maskName(data.label)}
           </div>
-          <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
-            {isDeceased ? 'Fallecido' : 'Activo'}
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-0.5">
+            {isDeceased ? 'FALLECIDO' : 'ACTIVO'}
           </div>
         </div>
       </div>
@@ -96,7 +98,7 @@ export const IndividualNode = ({ data, selected }: NodeProps<IndividualNodeData>
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5 !bg-slate-400 border-2 border-white" />
+      <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-slate-300 border-none" />
     </div>
   );
 };
