@@ -23,34 +23,42 @@ export const GenogramEdge = ({
     targetX,
     targetY,
     targetPosition,
+    borderRadius: 0,
   });
 
   const relationType = data?.relationType || RelationType.BLOOD;
 
-  let strokeColor = '#64748b'; // slate-500
+  let strokeColor = '#0f172a'; // slate-900 (solid black/dark by default)
   let strokeWidth = 2;
   let strokeDasharray = '';
   let animation = '';
+  let isDoubleLine = false;
 
   switch (relationType) {
     case RelationType.MARRIAGE:
-      strokeColor = '#475569'; // slate-600
+      strokeColor = '#0284c7'; // blue-600
       strokeWidth = 2;
       break;
     case RelationType.DIVORCE:
+      strokeColor = '#0284c7';
+      break;
+    case RelationType.SEPARATION:
+      strokeColor = '#0284c7';
+      break;
+    case RelationType.COHABITATION:
       strokeColor = '#475569';
-      strokeDasharray = '5,5';
+      strokeDasharray = '4,4';
       break;
     case RelationType.CONFLICT:
       strokeColor = '#ef4444'; // red-500
-      strokeWidth = 3;
-      // Zigzag simulation via dasharray isn't perfect but works for simple viz
-      strokeDasharray = '2,2'; 
+      strokeWidth = 2;
+      strokeDasharray = '5,2,1,2'; // Zigzag simulation
       animation = 'animate-pulse';
       break;
     case RelationType.CLOSE:
       strokeColor = '#22c55e'; // green-500
       strokeWidth = 4;
+      isDoubleLine = true;
       break;
     case RelationType.DISTANT:
       strokeColor = '#94a3b8'; // slate-400
@@ -71,18 +79,46 @@ export const GenogramEdge = ({
         }}
         className={animation}
       />
+      {isDoubleLine && (
+        <BaseEdge
+          path={edgePath}
+          style={{
+            stroke: 'white',
+            strokeWidth: strokeWidth - 2,
+          }}
+        />
+      )}
       {relationType === RelationType.DIVORCE && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              fontSize: 12,
+              fontSize: 14,
               pointerEvents: 'all',
+              fontWeight: 'bold',
+              color: strokeColor,
             }}
-            className="nodrag nopan bg-white px-1 rounded border border-slate-200 text-slate-500 font-mono"
+            className="nodrag nopan bg-white px-1 leading-none"
           >
             //
+          </div>
+        </EdgeLabelRenderer>
+      )}
+      {relationType === RelationType.SEPARATION && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              fontSize: 14,
+              pointerEvents: 'all',
+              fontWeight: 'bold',
+              color: strokeColor,
+            }}
+            className="nodrag nopan bg-white px-1 leading-none"
+          >
+            /
           </div>
         </EdgeLabelRenderer>
       )}
@@ -95,7 +131,7 @@ export const GenogramEdge = ({
               fontSize: 16,
               pointerEvents: 'all',
             }}
-            className="nodrag nopan text-red-500"
+            className="nodrag nopan text-red-500 bg-white/50 rounded-full"
           >
             ⚡
           </div>

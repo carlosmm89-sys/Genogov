@@ -290,6 +290,93 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
     setSelectedId(null);
   };
 
+  const addSpouse = () => {
+    if (!selectedId) return;
+    const currentPerson = individuals.find(i => i.id === selectedId);
+    if (!currentPerson) return;
+
+    // Determine opposite gender
+    const spouseGender = currentPerson.gender === Gender.MALE ? Gender.FEMALE : Gender.MALE;
+    const spouse = addPerson(spouseGender);
+
+    // Position the new node relative to the selected person
+    setNodes(nds => nds.map(n => {
+      if (n.id === spouse.id) {
+        const sourceNode = nds.find(s => s.id === selectedId);
+        return {
+          ...n,
+          position: {
+            x: (sourceNode?.position.x || 0) + 150,
+            y: sourceNode?.position.y || 0
+          }
+        };
+      }
+      return n;
+    }));
+
+    const edgeId = `e-${selectedId}-${spouse.id}-${Date.now()}`;
+    setEdges(eds => [...eds, { id: edgeId, source: selectedId, target: spouse.id, type: 'genogram', data: { relationType: RelationType.MARRIAGE } }]);
+    logAction("Vínculo Rápido", `Se vinculó cónyuge a ${currentPerson.firstName}`);
+  };
+
+  const addParents = () => {
+    if (!selectedId) return;
+    const currentPerson = individuals.find(i => i.id === selectedId);
+    if (!currentPerson) return;
+
+    const father = addPerson(Gender.MALE);
+    const mother = addPerson(Gender.FEMALE);
+
+    setNodes(nds => nds.map(n => {
+      const sourceNode = nds.find(s => s.id === selectedId);
+      if (n.id === father.id) {
+        return { ...n, position: { x: (sourceNode?.position.x || 0) - 100, y: (sourceNode?.position.y || 0) - 150 } };
+      }
+      if (n.id === mother.id) {
+        return { ...n, position: { x: (sourceNode?.position.x || 0) + 100, y: (sourceNode?.position.y || 0) - 150 } };
+      }
+      return n;
+    }));
+
+    const marriageEdgeId = `e-${father.id}-${mother.id}-${Date.now()}`;
+    const parentEdge1 = `e-${father.id}-${selectedId}-${Date.now()}`;
+    const parentEdge2 = `e-${mother.id}-${selectedId}-${Date.now()}`;
+
+    setEdges(eds => [
+      ...eds,
+      { id: marriageEdgeId, source: father.id, target: mother.id, type: 'genogram', data: { relationType: RelationType.MARRIAGE } },
+      { id: parentEdge1, source: father.id, target: selectedId, type: 'genogram', data: { relationType: RelationType.BLOOD } },
+      { id: parentEdge2, source: mother.id, target: selectedId, type: 'genogram', data: { relationType: RelationType.BLOOD } }
+    ]);
+    logAction("Vínculo Rápido", `Padres creados simultáneamente para ${currentPerson.firstName}`);
+  };
+
+  const addChild = (gender: Gender) => {
+    if (!selectedId) return;
+    const currentPerson = individuals.find(i => i.id === selectedId);
+    if (!currentPerson) return;
+
+    const child = addPerson(gender);
+
+    setNodes(nds => nds.map(n => {
+      if (n.id === child.id) {
+        const sourceNode = nds.find(s => s.id === selectedId);
+        return {
+          ...n,
+          position: {
+            x: sourceNode?.position.x || 0,
+            y: (sourceNode?.position.y || 0) + 150
+          }
+        };
+      }
+      return n;
+    }));
+
+    const edgeId = `e-${selectedId}-${child.id}-${Date.now()}`;
+    setEdges(eds => [...eds, { id: edgeId, source: selectedId, target: child.id, type: 'genogram', data: { relationType: RelationType.BLOOD } }]);
+    logAction("Vínculo Rápido", `Nuevo hijo/a añadido a ${currentPerson.firstName}`);
+  };
+
   // Keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -299,11 +386,17 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
       if (e.key.toLowerCase() === 'e') addPerson(Gender.FEMALE);
       if (e.key.toLowerCase() === 'f') setIsWizardOpen(true);
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+
+      // GenoPro-style Topology Shortcuts
+      if (e.key.toLowerCase() === 'm') addSpouse();
+      if (e.key.toLowerCase() === 'p') addParents();
+      if (e.key.toLowerCase() === 's') addChild(Gender.MALE);
+      if (e.key.toLowerCase() === 'd') addChild(Gender.FEMALE);
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [addPerson, deleteSelected]);
+  }, [addPerson, deleteSelected, addSpouse, addParents, addChild]);
 
   return (
     <div className="flex h-screen w-full bg-[#F8F9FA] overflow-hidden font-sans text-slate-900">
