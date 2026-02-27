@@ -17,6 +17,7 @@ import '@xyflow/react/dist/style.css';
 import { Individual, Family, Gender, RelationType, RiskLevel, createIndividual, createFamily } from './types';
 import { IndividualNode, FamilyNode } from './components/Nodes';
 import { GenogramEdge } from './components/Edges';
+import { FamilyLegend } from './components/FamilyLegend';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -315,7 +316,15 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
     }));
 
     const edgeId = `e-${selectedId}-${spouse.id}-${Date.now()}`;
-    setEdges(eds => [...eds, { id: edgeId, source: selectedId, target: spouse.id, type: 'genogram', data: { relationType: RelationType.MARRIAGE } }]);
+    setEdges(eds => [...eds, {
+      id: edgeId,
+      source: selectedId,
+      target: spouse.id,
+      type: 'genogram',
+      sourceHandle: 'bottom-source',
+      targetHandle: 'bottom-target',
+      data: { relationType: RelationType.MARRIAGE }
+    }]);
     logAction("Vínculo Rápido", `Se vinculó cónyuge a ${currentPerson.firstName}`);
   };
 
@@ -344,7 +353,15 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
     setEdges(eds => [
       ...eds,
-      { id: marriageEdgeId, source: father.id, target: mother.id, type: 'genogram', data: { relationType: RelationType.MARRIAGE } },
+      {
+        id: marriageEdgeId,
+        source: father.id,
+        target: mother.id,
+        type: 'genogram',
+        sourceHandle: 'bottom-source',
+        targetHandle: 'bottom-target',
+        data: { relationType: RelationType.MARRIAGE }
+      },
       { id: parentEdge1, source: father.id, target: selectedId, type: 'genogram', data: { relationType: RelationType.BLOOD } },
       { id: parentEdge2, source: mother.id, target: selectedId, type: 'genogram', data: { relationType: RelationType.BLOOD } }
     ]);
@@ -583,9 +600,11 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               edgeTypes={edgeTypes}
               defaultEdgeOptions={{ type: 'genogram' }}
               fitView
-              className="bg-slate-50"
+              attributionPosition="bottom-right"
+              className="bg-slate-50 relative"
             >
-              <Background color="#E2E8F0" gap={20} />
+              <FamilyLegend />
+              <Background gap={24} size={2} color="#e2e8f0" />
               <Controls className="!bg-white !border-slate-200 !shadow-sm" />
               <MiniMap
                 nodeStrokeColor={(n) => {
@@ -789,18 +808,45 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                         value={edges.find(e => e.id === selectedEdgeId)?.data?.relationType as string || RelationType.BLOOD}
                         onChange={(e) => {
                           const val = e.target.value as RelationType;
-                          setEdges(eds => eds.map(edge => edge.id === selectedEdgeId ? { ...edge, data: { ...edge.data, relationType: val } } : edge));
+
+                          // Convert to U-shape if it's a couple relation, else remove custom handles
+                          const isCoupleRelation = [
+                            RelationType.MARRIAGE, RelationType.ENGAGEMENT, RelationType.COHABITATION,
+                            RelationType.LEGAL_COHABITATION, RelationType.SEPARATION_IN_FACT,
+                            RelationType.LEGAL_SEPARATION, RelationType.DIVORCE,
+                            RelationType.NULLITY, RelationType.LOVE_AFFAIR
+                          ].includes(val);
+
+                          setEdges(eds => eds.map(edge => {
+                            if (edge.id === selectedEdgeId) {
+                              return {
+                                ...edge,
+                                ...(isCoupleRelation ? { sourceHandle: 'bottom-source', targetHandle: 'bottom-target' } : { sourceHandle: undefined, targetHandle: undefined }),
+                                data: { ...edge.data, relationType: val }
+                              };
+                            }
+                            return edge;
+                          }));
                         }}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                       >
                         <option value={RelationType.BLOOD}>Consanguinidad (Hijo/a)</option>
-                        <option value={RelationType.MARRIAGE}>Matrimonio / Pareja de Hecho</option>
-                        <option value={RelationType.COHABITATION}>Convivencia</option>
-                        <option value={RelationType.CONFLICT}>Relación Conflictiva</option>
-                        <option value={RelationType.CLOSE}>Relación Muy Estrecha</option>
-                        <option value={RelationType.DISTANT}>Relación Distante</option>
-                        <option value={RelationType.DIVORCE}>Divorcio / Ruptura</option>
-                        <option value={RelationType.SEPARATION}>Separación</option>
+                        <optgroup label="Relaciones de Pareja (Trazo en U)">
+                          <option value={RelationType.MARRIAGE}>Matrimonio</option>
+                          <option value={RelationType.ENGAGEMENT}>Compromiso (Noviazgo)</option>
+                          <option value={RelationType.COHABITATION}>Convivencia</option>
+                          <option value={RelationType.LEGAL_COHABITATION}>Pareja de Hecho (Legal)</option>
+                          <option value={RelationType.SEPARATION_IN_FACT}>Separación de Hecho</option>
+                          <option value={RelationType.LEGAL_SEPARATION}>Separación Legal</option>
+                          <option value={RelationType.DIVORCE}>Divorcio</option>
+                          <option value={RelationType.NULLITY}>Nulidad Matrimonial</option>
+                          <option value={RelationType.LOVE_AFFAIR}>Aventura / Amorío</option>
+                        </optgroup>
+                        <optgroup label="Relaciones Emocionales y Sociales">
+                          <option value={RelationType.CONFLICT}>Relación Conflictiva</option>
+                          <option value={RelationType.CLOSE}>Relación Muy Estrecha</option>
+                          <option value={RelationType.DISTANT}>Relación Distante</option>
+                        </optgroup>
                       </select>
                     </div>
                     <p className="text-[10px] text-slate-400 italic leading-relaxed">
@@ -999,7 +1045,15 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
                   if (fatherId && motherId) {
                     const edgeId = `e-${fatherId}-${motherId}-${Date.now()}`;
-                    setEdges(eds => addEdge({ id: edgeId, source: fatherId, target: motherId, type: 'genogram', data: { relationType: RelationType.MARRIAGE } }, eds));
+                    setEdges(eds => addEdge({
+                      id: edgeId,
+                      source: fatherId,
+                      target: motherId,
+                      type: 'genogram',
+                      sourceHandle: 'bottom-source',
+                      targetHandle: 'bottom-target',
+                      data: { relationType: RelationType.MARRIAGE }
+                    }, eds));
                   }
 
                   wizardChildren.forEach(child => {
@@ -1088,13 +1142,22 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                   className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500 text-slate-600"
                 >
                   <option value={RelationType.BLOOD}>Consanguinidad (Hijo/a)</option>
-                  <option value={RelationType.MARRIAGE}>Matrimonio / Pareja de Hecho</option>
-                  <option value={RelationType.COHABITATION}>Convivencia</option>
-                  <option value={RelationType.CONFLICT}>Relación Conflictiva</option>
-                  <option value={RelationType.CLOSE}>Relación Muy Estrecha</option>
-                  <option value={RelationType.DISTANT}>Relación Distante</option>
-                  <option value={RelationType.DIVORCE}>Divorcio / Ruptura</option>
-                  <option value={RelationType.SEPARATION}>Separación</option>
+                  <optgroup label="Relaciones de Pareja (Trazo en U)">
+                    <option value={RelationType.MARRIAGE}>Matrimonio</option>
+                    <option value={RelationType.ENGAGEMENT}>Compromiso (Noviazgo)</option>
+                    <option value={RelationType.COHABITATION}>Convivencia</option>
+                    <option value={RelationType.LEGAL_COHABITATION}>Pareja de Hecho</option>
+                    <option value={RelationType.SEPARATION_IN_FACT}>Separación de Hecho</option>
+                    <option value={RelationType.LEGAL_SEPARATION}>Separación Legal</option>
+                    <option value={RelationType.DIVORCE}>Divorcio</option>
+                    <option value={RelationType.NULLITY}>Nulidad Matrimonial</option>
+                    <option value={RelationType.LOVE_AFFAIR}>Aventura / Amorío</option>
+                  </optgroup>
+                  <optgroup label="Relaciones Emocionales y Sociales">
+                    <option value={RelationType.CONFLICT}>Relación Conflictiva</option>
+                    <option value={RelationType.CLOSE}>Relación Muy Estrecha</option>
+                    <option value={RelationType.DISTANT}>Relación Distante</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -1109,11 +1172,22 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               <button
                 onClick={() => {
                   if (linkSourceId && linkTargetId && linkSourceId !== linkTargetId) {
+                    const isCoupleRelation = [
+                      RelationType.MARRIAGE, RelationType.ENGAGEMENT, RelationType.COHABITATION,
+                      RelationType.LEGAL_COHABITATION, RelationType.SEPARATION_IN_FACT,
+                      RelationType.LEGAL_SEPARATION, RelationType.DIVORCE,
+                      RelationType.NULLITY, RelationType.LOVE_AFFAIR
+                    ].includes(linkType);
+
                     const newEdge = {
                       id: `e-${linkSourceId}-${linkTargetId}-${Date.now()}`,
                       source: linkSourceId,
                       target: linkTargetId,
                       type: 'genogram',
+                      ...(isCoupleRelation && {
+                        sourceHandle: 'bottom-source',
+                        targetHandle: 'bottom-target'
+                      }),
                       data: { relationType: linkType }
                     };
                     setEdges((eds) => addEdge(newEdge, eds));

@@ -9,9 +9,14 @@ export enum Gender {
 export enum RelationType {
   BLOOD = 'blood',
   MARRIAGE = 'marriage',
-  DIVORCE = 'divorce',
+  ENGAGEMENT = 'engagement',
   COHABITATION = 'cohabitation',
-  SEPARATION = 'separation',
+  LEGAL_COHABITATION = 'legal_cohabitation',
+  SEPARATION_IN_FACT = 'separation_in_fact',
+  LEGAL_SEPARATION = 'legal_separation',
+  DIVORCE = 'divorce',
+  NULLITY = 'nullity',
+  LOVE_AFFAIR = 'love_affair',
   CONFLICT = 'conflict',
   CLOSE = 'close',
   DISTANT = 'distant'

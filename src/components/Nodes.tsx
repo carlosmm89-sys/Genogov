@@ -98,7 +98,8 @@ export const IndividualNode = ({ data, selected }: NodeProps<IndividualNodeData>
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-slate-300 border-none" />
+      <Handle type="source" position={Position.Bottom} id="bottom-source" className="w-2 h-2 !bg-slate-300 border-none" />
+      <Handle type="target" position={Position.Bottom} id="bottom-target" className="w-2 h-2 !bg-slate-300 border-none opacity-0" />
     </div>
   );
 };
