@@ -1019,6 +1019,10 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                   let fatherId = null;
                   let motherId = null;
 
+                  // Define the starting coordinates for the new family cluster
+                  const startX = Math.random() * 200 + 100;
+                  const startY = Math.random() * 200 + 100;
+
                   if (wizardFather.trim()) {
                     const p = addPerson(Gender.MALE);
                     setIndividuals(prev => {
@@ -1027,7 +1031,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                       if (target) target.firstName = wizardFather;
                       return updated;
                     });
-                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: wizardFather } } : n));
+                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, position: { x: startX, y: startY }, data: { ...n.data, label: wizardFather } } : n));
                     fatherId = p.id;
                   }
 
@@ -1039,7 +1043,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                       if (target) target.firstName = wizardMother;
                       return updated;
                     });
-                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: wizardMother } } : n));
+                    setNodes(nds => nds.map(n => n.id === p.id ? { ...n, position: { x: startX + 250, y: startY }, data: { ...n.data, label: wizardMother } } : n));
                     motherId = p.id;
                   }
 
@@ -1056,7 +1060,10 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                     }, eds));
                   }
 
-                  wizardChildren.forEach(child => {
+                  const childrenCount = wizardChildren.length;
+                  const childrenStartX = (startX + 125) - ((childrenCount - 1) * 100);
+
+                  wizardChildren.forEach((child, idx) => {
                     if (child.name.trim()) {
                       const p = addPerson(child.gender);
                       setIndividuals(prev => {
@@ -1065,7 +1072,13 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                         if (target) target.firstName = child.name;
                         return updated;
                       });
-                      setNodes(nds => nds.map(n => n.id === p.id ? { ...n, data: { ...n.data, label: child.name } } : n));
+
+                      // Position children sequentially below parents
+                      setNodes(nds => nds.map(n => n.id === p.id ? {
+                        ...n,
+                        position: { x: childrenStartX + (idx * 200), y: startY + 150 },
+                        data: { ...n.data, label: child.name }
+                      } : n));
 
                       const parentSource = fatherId || motherId;
                       if (parentSource) {
