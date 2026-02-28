@@ -39,8 +39,10 @@ import {
   Eye,
   EyeOff,
   Sparkles,
-  Loader2
+  Loader2,
+  Brain
 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -61,7 +63,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'visual' | 'table'>('visual');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false); // Re-added
   const [isLinkWizardOpen, setIsLinkWizardOpen] = useState(false);
 
   // Link Wizard State
@@ -89,6 +91,64 @@ export default function App() {
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Advanced Canvas State (History & Clipboard) - Moved below nodes/edges
+  const [past, setPast] = useState<{ nodes: Node[], edges: Edge[], individuals: Individual[] }[]>([]);
+  const [future, setFuture] = useState<{ nodes: Node[], edges: Edge[], individuals: Individual[] }[]>([]);
+  const currentStateRef = React.useRef({ nodes, edges, individuals });
+  React.useEffect(() => { currentStateRef.current = { nodes, edges, individuals }; }, [nodes, edges, individuals]);
+
+  const saveHistory = React.useCallback(() => {
+    setPast(p => {
+      const { nodes: sn, edges: se, individuals: si } = currentStateRef.current;
+      return [...p, {
+        nodes: JSON.parse(JSON.stringify(sn)),
+        edges: JSON.parse(JSON.stringify(se)),
+        individuals: JSON.parse(JSON.stringify(si))
+      }].slice(-30);
+    });
+    setFuture([]);
+  }, []);
+
+  const undo = React.useCallback(() => {
+    setPast(p => {
+      if (p.length === 0) return p;
+      const newPast = [...p];
+      const previousState = newPast.pop()!;
+
+      setFuture(f => [{
+        nodes: JSON.parse(JSON.stringify(currentStateRef.current.nodes)),
+        edges: JSON.parse(JSON.stringify(currentStateRef.current.edges)),
+        individuals: JSON.parse(JSON.stringify(currentStateRef.current.individuals))
+      }, ...f]);
+
+      setNodes(previousState.nodes);
+      setEdges(previousState.edges);
+      setIndividuals(previousState.individuals);
+      return newPast;
+    });
+  }, [setNodes, setEdges, setIndividuals]); // Added setIndividuals to dependencies
+
+  const redo = React.useCallback(() => {
+    setFuture(f => {
+      if (f.length === 0) return f;
+      const newFuture = [...f];
+      const nextState = newFuture.shift()!;
+
+      setPast(p => [...p, {
+        nodes: JSON.parse(JSON.stringify(currentStateRef.current.nodes)),
+        edges: JSON.parse(JSON.stringify(currentStateRef.current.edges)),
+        individuals: JSON.parse(JSON.stringify(currentStateRef.current.individuals))
+      }]);
+
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
+      setIndividuals(nextState.individuals);
+      return newFuture;
+    });
+  }, [setNodes, setEdges, setIndividuals]); // Added setIndividuals to dependencies
+
+  const [clipboard, setClipboard] = useState<{ nodes: Node[], edges: Edge[], individuals: Individual[] } | null>(null);
 
   // Sync Privacy Mode to nodes
   React.useEffect(() => {
@@ -230,6 +290,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
   const onConnect = useCallback(
     (params: Connection) => {
+      saveHistory();
       const newEdge = {
         ...params,
         id: `e-${params.source}-${params.target}`,
@@ -238,7 +299,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, saveHistory]
   );
 
   const addPerson = (gender: Gender) => {
@@ -269,6 +330,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
 
   const deleteSelected = () => {
     if (selectedId) {
+      saveHistory();
       const person = individuals.find(i => i.id === selectedId);
       logAction("Eliminación", `Eliminado individuo: ${person?.firstName}`);
       setNodes(nds => nds.filter(n => n.id !== selectedId));
@@ -276,6 +338,7 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
       setIndividuals(prev => prev.filter(i => i.id !== selectedId));
       setSelectedId(null);
     } else if (selectedEdgeId) {
+      saveHistory();
       setEdges(eds => eds.filter(e => e.id !== selectedEdgeId));
       setSelectedEdgeId(null);
     }
@@ -409,11 +472,72 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
       if (e.key.toLowerCase() === 'p') addParents();
       if (e.key.toLowerCase() === 's') addChild(Gender.MALE);
       if (e.key.toLowerCase() === 'd') addChild(Gender.FEMALE);
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        redo();
+      }
+
+      // Clipboard Shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        const selectedNodes = nodes.filter(n => n.selected);
+        const selectedEdges = edges.filter(e => e.selected);
+        const selectedIndividuals = individuals.filter(ind => selectedNodes.some(n => n.id === ind.id));
+
+        if (selectedNodes.length > 0) {
+          setClipboard({ nodes: selectedNodes, edges: selectedEdges, individuals: selectedIndividuals });
+          logAction("Portapapeles", `Copiados ${selectedNodes.length} individuos.`);
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        if (!clipboard) return;
+
+        const idMap = new Map<string, string>();
+
+        const newIndividuals = clipboard.individuals.map(ind => {
+          const newId = uuidv4();
+          idMap.set(ind.id, newId);
+          return { ...ind, id: newId };
+        });
+
+        const newNodes = clipboard.nodes.map(node => {
+          const newId = idMap.get(node.id) || uuidv4(); // Generate if it's a non-individual node (e.g. anchor)
+          idMap.set(node.id, newId);
+          return {
+            ...node,
+            id: newId,
+            position: { x: node.position.x + 50, y: node.position.y + 50 },
+            selected: true,
+          };
+        });
+
+        const newEdges = clipboard.edges.map(edge => ({
+          ...edge,
+          id: `e-${idMap.get(edge.source) || edge.source}-${idMap.get(edge.target) || edge.target}-${uuidv4()}`,
+          source: idMap.get(edge.source) || edge.source,
+          target: idMap.get(edge.target) || edge.target,
+          selected: true,
+        }));
+
+        setIndividuals(prev => [...prev, ...newIndividuals]);
+        setNodes(nds => [...nds.map(n => ({ ...n, selected: false })), ...newNodes]);
+        setEdges(eds => [...eds.map(e => ({ ...e, selected: false })), ...newEdges]);
+
+        logAction("Portapapeles", `Pegados ${newNodes.length} individuos.`);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [addPerson, deleteSelected, addSpouse, addParents, addChild]);
+  }, [addPerson, deleteSelected, addSpouse, addParents, addChild, nodes, edges, individuals, clipboard]);
 
   return (
     <div className="flex h-screen w-full bg-[#F8F9FA] overflow-hidden font-sans text-slate-900">
@@ -602,6 +726,8 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               fitView
               attributionPosition="bottom-right"
               className="bg-slate-50 relative"
+              selectionKeyCode="Control"
+              multiSelectionKeyCode="Control"
             >
               <FamilyLegend />
               <Background gap={24} size={2} color="#e2e8f0" />
@@ -1073,10 +1199,10 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
                         return updated;
                       });
 
-                      // Position children sequentially below parents
+                      // Position children sequentially below parents (250px spacing as requested)
                       setNodes(nds => nds.map(n => n.id === p.id ? {
                         ...n,
-                        position: { x: childrenStartX + (idx * 200), y: startY + 150 },
+                        position: { x: childrenStartX + (idx * 250), y: startY + 150 },
                         data: { ...n.data, label: child.name }
                       } : n));
 
