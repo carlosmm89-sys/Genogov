@@ -15,6 +15,7 @@ export const GenogramEdge = ({
   targetPosition,
   style = {},
   markerEnd,
+  selected,
   data,
 }: EdgeProps<GenogramEdgeData>) => {
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -89,15 +90,12 @@ export const GenogramEdge = ({
   return (
     <>
       <BaseEdge
+        id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        style={{
-          ...(style as React.CSSProperties),
-          stroke: strokeColor,
-          strokeWidth,
-          strokeDasharray,
-        }}
-        className={animation}
+        style={{ ...style, strokeWidth, stroke: strokeColor, strokeDasharray, transition: 'all 0.2s', filter: selected ? `drop-shadow(0 0 3px ${strokeColor})` : 'none' }}
+        className={`react-flow__edge-path ${animation} hover:stroke-indigo-400 group-hover:stroke-indigo-400`}
+        interactionWidth={30}
       />
       {isDoubleLine && (
         <BaseEdge
