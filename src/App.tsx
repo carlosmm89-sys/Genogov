@@ -344,6 +344,19 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
     }
   };
 
+  const handleChangeEdgeType = useCallback((newType: RelationType) => {
+    if (!selectedEdgeId) return;
+    saveHistory();
+    setEdges(eds => eds.map(e => {
+      if (e.id === selectedEdgeId) {
+        return { ...e, data: { ...e.data, relationType: newType } };
+      }
+      return e;
+    }));
+    setSelectedEdgeId(null); // Deselect after changing
+    logAction("Vínculo", `Tipo de vínculo actualizado a ${newType}`);
+  }, [selectedEdgeId, saveHistory, setEdges]);
+
   const onNodeClick = (_: any, node: Node) => {
     setSelectedId(node.id);
     setSelectedEdgeId(null);
@@ -729,7 +742,10 @@ ${individuals.map(i => `0 @I${i.id}@ INDI
               selectionKeyCode="Control"
               multiSelectionKeyCode="Control"
             >
-              <FamilyLegend />
+              <FamilyLegend
+                selectedEdgeId={selectedEdgeId}
+                onChangeEdge={handleChangeEdgeType}
+              />
               <Background gap={24} size={2} color="#e2e8f0" />
               <Controls className="!bg-white !border-slate-200 !shadow-sm" />
               <MiniMap

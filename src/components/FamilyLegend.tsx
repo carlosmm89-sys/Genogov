@@ -1,8 +1,27 @@
-import React, { useState } from 'react';
-import { HelpCircle, X, ChevronUp, Home } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { HelpCircle, X, Home, Edit3 } from 'lucide-react';
+import { RelationType } from '../types';
 
-export const FamilyLegend = () => {
+interface FamilyLegendProps {
+    selectedEdgeId?: string | null;
+    onChangeEdge?: (type: RelationType) => void;
+}
+
+export const FamilyLegend: React.FC<FamilyLegendProps> = ({ selectedEdgeId, onChangeEdge }) => {
     const [isOpen, setIsOpen] = useState(false);
+
+    // Auto-open if the user starts editing an edge
+    useEffect(() => {
+        if (selectedEdgeId) setIsOpen(true);
+    }, [selectedEdgeId]);
+
+    const handleAssign = (type: RelationType) => {
+        if (selectedEdgeId && onChangeEdge) {
+            onChangeEdge(type);
+        }
+    };
+
+    const isEditing = !!selectedEdgeId;
 
     if (!isOpen) {
         return (
@@ -19,10 +38,10 @@ export const FamilyLegend = () => {
 
     return (
         <div className="absolute bottom-6 left-6 z-40 bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
-            <div className="bg-slate-50 border-b border-slate-100 p-3 px-4 flex items-center justify-between">
+            <div className={`border-b p-3 px-4 flex items-center justify-between ${isEditing ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
                 <h3 className="font-bold text-sm text-slate-700 flex items-center gap-2">
-                    <HelpCircle size={16} className="text-indigo-500" />
-                    Tipos de Vínculo (GenoPro)
+                    {isEditing ? <Edit3 size={16} className="text-indigo-600 animate-pulse" /> : <HelpCircle size={16} className="text-indigo-500" />}
+                    {isEditing ? 'Editar Vínculo Seleccionado' : 'Tipos de Vínculo (GenoPro)'}
                 </h3>
                 <button
                     onClick={() => setIsOpen(false)}
@@ -34,25 +53,31 @@ export const FamilyLegend = () => {
 
             <div className="p-4 bg-white max-h-[60vh] overflow-y-auto space-y-6">
 
+                {isEditing && (
+                    <div className="text-[10px] text-indigo-600 font-medium bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-100 mb-2">
+                        Selecciona un estilo inferior para aplicarlo directamente a la línea que tienes seleccionada.
+                    </div>
+                )}
+
                 {/* Parejas Section */}
                 <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Relaciones de Pareja</h4>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
 
-                        <div className="flex items-center gap-3 group" title="Matrimonio">
+                        <button onClick={() => handleAssign(RelationType.MARRIAGE)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Matrimonio">
                             <div className="w-12 h-0 border-b-2 border-slate-900 flex-shrink-0 relative">
                                 <div className="absolute -left-2 -top-1 w-2 h-2 rounded bg-slate-300"></div>
                                 <div className="absolute -right-2 -top-1 w-2 h-2 rounded-full bg-slate-300"></div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Matrimonio</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Compromiso (Noviazgo)">
+                        <button onClick={() => handleAssign(RelationType.ENGAGEMENT)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Compromiso (Noviazgo)">
                             <div className="w-12 h-0 border-b-2 border-slate-900 border-dashed flex-shrink-0 relative"></div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Compromiso</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Convivencia">
+                        <button onClick={() => handleAssign(RelationType.COHABITATION)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Convivencia">
                             <div className="w-12 flex-shrink-0 flex items-center justify-between overflow-hidden">
                                 <div className="w-2 h-0.5 bg-slate-900"></div>
                                 <div className="w-1 h-0.5 bg-slate-900"></div>
@@ -61,9 +86,9 @@ export const FamilyLegend = () => {
                                 <div className="w-2 h-0.5 bg-slate-900"></div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Convivencia</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Pareja de hecho (Legal)">
+                        <button onClick={() => handleAssign(RelationType.LEGAL_COHABITATION)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Pareja de hecho (Legal)">
                             <div className="w-12 flex-shrink-0 flex items-center justify-center relative">
                                 <div className="absolute inset-0 flex items-center justify-between overflow-hidden">
                                     <div className="w-2 h-0.5 bg-slate-900"></div>
@@ -75,33 +100,33 @@ export const FamilyLegend = () => {
                                 <div className="bg-white p-0.5 z-10 text-slate-900"><Home size={10} strokeWidth={3} /></div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Pareja de Hecho</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Separación de hecho / Separación Legal">
+                        <button onClick={() => handleAssign(RelationType.SEPARATION_IN_FACT)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Separación de hecho / Separación Legal">
                             <div className="w-12 h-0 border-b-2 border-red-600 flex-shrink-0 relative flex items-center justify-center">
                                 <div className="bg-white px-0.5 text-red-600 font-bold text-[10px] leading-none z-10 transform -skew-x-12"> / </div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Separación</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Divorcio">
+                        <button onClick={() => handleAssign(RelationType.DIVORCE)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Divorcio">
                             <div className="w-12 h-0 border-b-2 border-red-600 flex-shrink-0 relative flex items-center justify-center">
                                 <div className="bg-white px-0.5 text-red-600 font-bold text-[10px] leading-none z-10 transform -skew-x-12"> // </div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Divorcio</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Nulidad Matrimonial">
+                        <button onClick={() => handleAssign(RelationType.NULLITY)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Nulidad Matrimonial">
                             <div className="w-12 h-0 border-b-2 border-red-600 flex-shrink-0 relative flex items-center justify-center">
                                 <div className="bg-white px-0.5 text-red-600 font-bold text-[10px] leading-none z-10 transform -skew-x-12"> /// </div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Nulidad</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Amorío / Aventura Ocasional">
+                        <button onClick={() => handleAssign(RelationType.LOVE_AFFAIR)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Amorío / Aventura Ocasional">
                             <div className="w-12 h-0 border-b-2 border-rose-500 border-dotted flex-shrink-0 relative"></div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Amorío</span>
-                        </div>
+                        </button>
 
                     </div>
                 </div>
@@ -109,24 +134,24 @@ export const FamilyLegend = () => {
                 {/* Sociales Section */}
                 <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Relaciones Sociales</h4>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
 
-                        <div className="flex items-center gap-3 group" title="Consanguinidad / Hijo">
+                        <button onClick={() => handleAssign(RelationType.BLOOD)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Consanguinidad / Hijo">
                             <div className="w-12 h-0 border-b-2 border-slate-900 flex-shrink-0 relative"></div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Biológica / Consanguínea</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Relación Muy Estrecha">
+                        <button onClick={() => handleAssign(RelationType.CLOSE)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Relación Muy Estrecha">
                             <div className="w-12 h-1 border-y-2 border-green-500 flex-shrink-0 relative"></div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Muy Estrecha</span>
-                        </div>
+                        </button>
 
-                        <div className="flex items-center gap-3 group" title="Relación Conflictiva">
+                        <button onClick={() => handleAssign(RelationType.CONFLICT)} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors group ${isEditing ? 'hover:bg-indigo-50 cursor-pointer' : 'cursor-default'}`} title="Relación Conflictiva">
                             <div className="w-12 h-0 border-b-2 border-red-500 flex-shrink-0 relative flex items-center justify-center">
                                 <div className="bg-white/80 rounded-full text-red-500 z-10 text-[10px]">⚡</div>
                             </div>
                             <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900">Conflictiva</span>
-                        </div>
+                        </button>
 
                     </div>
                 </div>
